@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Drag Demo</title>
+		<style type="text/css">
+			canvas {
+				border : 1px solid black;
+				border-radius : 5px;
+			}
+		</style>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<script type="text/javascript" src="C2D.js"></script>
+		<script type="text/javascript" src="utility.js"></script>
+		<script type="text/javascript" src="sprite.js"></script>
+		<script type="text/javascript">	
+			var draggable = {
+				width : 50,
+				height : 50,
+				stroke : "red",
+				borderradius : 5,
+				location : [10],
+				draggable : true,
+				onmousein : function() {
+					this.fill = "rgba(126,126,126,0.5)";
+				},
+				onmouseout : function() {
+					this.fill = "rgba(0,0,0,0)";
+				},
+				ondrop : {
+					droppable : function(s) {
+						this.stick();
+						s.sprites[0].text = s.holding.length + " / " + s.limit;
+					}
+				}
+			}, droppable = {
+				width : 50,
+				height : 50,
+				borderradius : 5,
+				stroke : "green",
+				limit : 2,
+				ontake : function(taken) {
+					this.sprites[0].text = this.holding.length + " / " + this.limit;
+				},
+				onmousein : function() {
+					this.fill = "rgba(126,126,126,0.5)";
+				},
+				onmouseout : function() {
+					this.fill = "rgba(0,0,0,0)";
+				},
+				onadd : function(p) {
+					this.location[0] = p.width - this.width - 10;
+				},
+				init : function() {
+					this.add(new Sprite({
+						stroke : "blue",
+						fill : "blue"
+					}));
+				},
+				type : "droppable"
+			}, container = {
+				width : 640,
+				height : 480
+			};			
+			var c2d = new C2D("screen", function() {
+				var screen = new Sprite(container);
+				c2d.setScreen("screen", screen);
+				screen.add(new Sprite(droppable, function() {
+					this.location[1] = 10;
+				}));
+				screen.add(new Sprite(droppable, function() {
+					this.location[1] = 160;
+				}));
+				screen.add(new Sprite(droppable, function() {
+					this.location[1] = 310;
+				}));
+				var droppables = c2d.find({type:"droppable"});
+				screen.add(new Sprite(draggable, function() {
+					this.location[1] = 10;
+					this.drop(droppables[0]);
+				}));
+				screen.add(new Sprite(draggable, function() {
+					this.location[1] = 160;
+					this.drop(droppables[1]);
+				}));
+				screen.add(new Sprite(draggable, function() {
+					this.location[1] = 310;
+					this.drop(droppables[2]);
+				}));
+				c2d.setScreen("screen", screen).start();
+			});
+		</script>
+	</head>
+	<body>
+		<canvas id="screen"></canvas>
+	</body>
+</html>

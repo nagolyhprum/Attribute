@@ -1,0 +1,186 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Scramble Game</title>
+		<style type="text/css">
+			canvas {
+				border : 1px solid black;
+				border-radius : 5px;
+			}
+		</style>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<script type="text/javascript" src="C2D.js"></script>
+		<script type="text/javascript" src="utility.js"></script>
+		<script type="text/javascript" src="sprite.js"></script>
+		<script type="text/javascript">	
+			(function() {
+				var questions = [
+					{
+						image : "http://us.123rf.com/400wm/400/400/imagerymajestic/imagerymajestic0812/imagerymajestic081200407/3950969-man-wearing-winter-cap-and-jacket-waving-hello-against-white-background.jpg",
+						text : "Hello"
+					},
+					{
+						image : "http://charitygrace.files.wordpress.com/2009/06/woman-waving-goodbye.jpg",
+						text : "Goodbye"
+					},
+					{
+						image : "http://pdxsx.files.wordpress.com/2011/05/network-handshake.jpg",
+						text : "Nice to meet you"
+					},
+					{
+						image : "http://1.bp.blogspot.com/-QBIxy_O9Uic/UAnPXzsE-0I/AAAAAAAABwE/d-kANAnK5XM/s1600/I+Want+You.jpg",
+						text : "You"
+					},
+					{
+						image : "http://www.everyvotecounts.org.uk/pack-content/images/pix/supporters/me.jpg",
+						text : "Me"
+					}
+				];								
+				var MAX_WORDS = 8, WIDTH = 60, HEIGHT = 25;
+				var cvs = new C2D("screen", function() {
+					var current_question;
+					function setUpScene() {
+						questions.shuffle();
+						current_question = questions[0];
+						img(current_question.image, function(img) {
+							image.image = img;
+							var split = current_question.text.split(/\s+/g);
+							hideAll();
+							for(var i = 0; (i < MAX_WORDS) && (i < split.length); i++) {
+								draggableWords[i].sprites[0].text = split[i];
+								draggableWords[i].visible = 1
+								draggableWords[i].drop(droppableWords_q[i]);
+								droppableWords_q[i].visible = 1;
+								droppableWords_a[i].visible = 1;
+							}
+						});
+					}
+					
+					function hideAll() {
+						for(var i = 0; i < MAX_WORDS; i++) {
+							draggableWords[i].visible = 0;
+							droppableWords_q[i].visible = 0;
+							droppableWords_a[i].visible = 0;
+						}
+					}
+				
+					var screen = new Sprite({
+						width : 640,
+						height : 480
+					}), droppableWord_q = {
+						type : "droppable_q",
+						limit : 1,
+						width : WIDTH,
+						height : HEIGHT,
+						borderradius : 5,
+						stroke : "black"
+					}, droppableWord_a = {
+						type : "droppable_a",
+						limit : 1,
+						width : WIDTH,
+						height : HEIGHT,
+						borderradius : 5,
+						stroke : "black"
+					}, draggableWord = {
+						priority : 1,
+						onmousedown : function() {
+							this.priority = 2;
+						},
+						onmouseup : function() {
+							this.priority = 1;
+						},
+						ondrop : {
+							droppable_a : function(d) {
+								this.location = d.location.slice(0);
+								this.stick();
+							},
+							droppable_q : function(d) {
+								this.location = d.location.slice(0);
+								this.stick();
+							}
+						},
+						fill : "gray",
+						width : WIDTH,
+						height : HEIGHT,
+						type : "draggable",
+						init : function() {
+							this.add(new Sprite({
+								stroke : "black"
+							}));
+						},
+						draggable : true,
+						borderradius : 5,
+						stroke : "black"
+					};
+					screen.add(new Sprite({
+						width : 400,
+						height : 300,
+						location : [120, 10],
+						stroke : "black",
+						borderradius : 5,
+						init : function() {
+							this.add(new Sprite({
+								type : "image",
+								width : 380,
+								height : 280,
+								location : [10, 10]
+							}));
+						}
+					}));
+					screen.add(new Sprite({ //button
+						borderradius : 5,
+						stroke : "#666666",
+						fill : "#000000",
+						init : function() {
+							this.add(new Sprite({
+								stroke : "#ffffff",
+								fill : "#ffffff",
+								text : "Submit"
+							}));
+						},
+						onmousedown : function() {							
+							this.fill = "#0078a3";
+						},
+						onmouseup : function() {
+							this.fill = "#f58400";
+						},
+						onmousein : function() {
+							if(cvs.mouse().downon.contains(this)) {
+								this.fill = "#0078a3";
+							} else {
+								this.fill = "#f58400";
+							}
+						},	
+						onmouseout : function() {
+							this.fill = "#000000";
+						},	
+						onmouseclick : function() {
+							//todo
+						},
+						width : WIDTH,
+						height : HEIGHT,
+						location : [320 - WIDTH / 2, 390]
+					}));
+					for(var i = 0; i < MAX_WORDS; i++) {
+						screen.add(new Sprite(droppableWord_q, function() {
+							this.location = [10 + i * (WIDTH + 10) + (10 * i), 320 + HEIGHT + 10, 1];
+						}));
+						screen.add(new Sprite(droppableWord_a, function() {
+							this.location = [10 + i * (WIDTH + 10) + (10 * i), 320, 1];
+						}));
+						screen.add(new Sprite(draggableWord));
+					}
+					var draggableWords = screen.find({type:"draggable"}),
+						droppableWords_q = screen.find({type:"droppable_q"}),						
+						droppableWords_a = screen.find({type:"droppable_a"}),
+						image = screen.find({type:"image"})[0];
+					setUpScene();
+					cvs.setScreen("screen", screen).start();
+				});
+			}());
+		</script>
+	</head>
+	<body>
+		<canvas id="screen"></canvas>
+	</body>
+</html>

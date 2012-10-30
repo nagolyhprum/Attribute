@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Matching Game</title>
+		<style type="text/css">
+			canvas {
+				border : 1px solid black;
+				border-radius : 5px;
+			}
+			body {
+				margin : 0;
+			}
+		</style>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<script type="text/javascript" src="C2D.js"></script>
+		<script type="text/javascript" src="utility.js"></script>
+		<script type="text/javascript" src="sprite.js"></script>
+		<meta name="google-translate-customization" content="565ba0cc62e19136-55d2fbed55a6fc88-gc9e322ba364995e7-f"></meta>
+		<script type="text/javascript">	
+			(function() {
+				var questions = [
+					{
+						image : "http://us.123rf.com/400wm/400/400/imagerymajestic/imagerymajestic0812/imagerymajestic081200407/3950969-man-wearing-winter-cap-and-jacket-waving-hello-against-white-background.jpg",
+						text : "Hello"
+					},
+					{
+						image : "http://charitygrace.files.wordpress.com/2009/06/woman-waving-goodbye.jpg",
+						text : "Goodbye"
+					},
+					{
+						image : "http://pdxsx.files.wordpress.com/2011/05/network-handshake.jpg",
+						text : "Nice to meet you"
+					},
+					{
+						image : "http://1.bp.blogspot.com/-QBIxy_O9Uic/UAnPXzsE-0I/AAAAAAAABwE/d-kANAnK5XM/s1600/I+Want+You.jpg",
+						text : "You"
+					},
+					{
+						image : "http://www.everyvotecounts.org.uk/pack-content/images/pix/supporters/me.jpg",
+						text : "Me"
+					}
+				];
+				
+				function setUpScene() {
+					questions.shuffle();
+					for(var  i = 0; i < list.length; i++) {
+						(function() {
+							var j = i;
+							img(questions[j].image, function(img) {
+								list[j].sprites[1].image = img;
+								list[j].sprites[0].sprites[0].text = "";
+							});
+						}());	
+						remaining.push({
+							text : questions[i].text,
+							id : i
+						});			
+					}
+					nextPhrase();
+				}
+				
+				function nextPhrase() {
+					if(enabled = (remaining.length > 0)) {
+						var index = Math.floor(Math.random() * remaining.length),
+							p = remaining.splice(index, 1)[0];
+						phrase.sprites[0].text = p.text
+						phrase.sprites[0].id = p.id;
+					} else {
+						setTimeout(setUpScene, 1000);
+					}
+				}
+				
+				var text = {
+					height : 40,
+					location : [10, 10],
+					stroke : "white",
+					borderradius : 5,
+					fill : "#30273a",
+					init : function() {
+						this.add(new Sprite({
+							stroke : "white"
+						}));
+					}
+				};
+				var picture = {		
+					height : 185,
+					width : 305,
+					stroke : "white",
+					fill : "#30273a",
+					borderradius : 5,
+					init : function() {
+						//text
+						this.add(new Sprite(text, function() {
+							this.width = 285;
+						}));
+						//picture
+						this.add(new Sprite({
+							stroke : "white",
+							width : 285,
+							height : 115,
+							location : [10, 60]
+						}));
+					},
+					onmousemove : function() {
+						cvs.cursor("pointer");
+					},
+					onmouseout : function() {
+						cvs.cursor("default");
+					},
+					onmouseclick : function() {
+						if(enabled) {
+							if(list[phrase.sprites[0].id] === this) {
+								this.enabled = false;
+								this.sprites[0].sprites[0].text = phrase.sprites[0].text;						
+								phrase.sprites[0].text = ""
+								phrase.sprites[0].id = -1;
+								nextPhrase();
+							} else {
+								enabled = false;
+								var me = this, fill = me.fill;
+								me.fill = "rgb(255, 0, 0)";
+								setTimeout(function() {
+									me.fill = fill;
+									enabled = true;
+								}, 1000);
+							}
+						}
+					}
+				};
+				var enabled = true;
+				var list = [], remaining = [];
+				var screen = {
+					width : 640,
+					height : 480,
+					fill : "#30273a",
+					init : function() {
+						this.add(phrase = new Sprite(text, function() {
+								this.width = 620;
+							})).add(list[0] = new Sprite(picture, function() {		
+								this.location = [10, 60];	
+							})).add(list[1] = new Sprite(picture, function() {	
+								this.location = [325, 60];
+							})).add(list[2] = new Sprite(picture, function() {			
+								this.location = [10, 255];
+							})).add(list[3] = new Sprite(picture, function() {		
+								this.location = [325, 255];
+							})).add(new Sprite({
+								onmousemove : function() {
+									cvs.cursor("pointer");
+								},
+								onmouseout : function() {
+									cvs.cursor("default");
+								},
+								onmouseclick : function() {
+									cvs.fullScreen();
+									this.index(this.index() ? 0 : 1);
+								},
+								borderradius : 5,
+								index : 1,
+								location : [10, 450, 1],
+								stroke : "white",
+								width : 20,
+								height : 20,
+								image : "http://www.swish-designs.co.uk/blog/wp-content/uploads/2010/03/fig.11.jpg",
+								columns : 2
+							}));
+					}
+				};
+				var cvs = new C2D("screen", function() {
+					cvs.setScreen("scene", new Sprite(screen));
+					img("images/ui-bg_highlight-soft_25_30273a_1x100.png", function(img) {
+						cvs.screen("scene").fill = cvs.context().createPattern(img, "repeat");
+						for(var i = 0; i < list.length; i++) {
+							list[i].fill = cvs.context().createPattern(img, "repeat");
+						}
+					});
+					img("images/ui-bg_gloss-wave_30_3d3644_500x100.png", function(img) {
+						cvs.screen("scene").sprites[0].fill = cvs.context().createPattern(img, "repeat");
+						for(var i = 0; i < list.length; i++) {
+							list[i].sprites[0].fill = cvs.context().createPattern(img, "repeat");
+						}
+					});
+					setUpScene();
+					cvs.start();
+				}), phrase;
+			}());
+		</script>
+	</head>
+	<body>
+		<div style="display:none;">
+			you. me. hello. nice to meet you.
+		</div>
+		<div>
+			<canvas id="screen">Please use an HTML5 enabled browser.</canvas>
+		</div>
+		<!--
+		What language would you like to learn?
+<span id="google_translate_element"></span><script type="text/javascript">
+function googleTranslateElementInit() {
+new google.translate.TranslateElement({pageLanguage: 'en', autoDisplay: false}, 'google_translate_element');
+}
+</script><script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>        
+-->
+	</body>
+</html>

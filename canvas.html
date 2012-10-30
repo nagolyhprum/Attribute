@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+	<head>
+		<style type="text/css">
+			canvas {
+				background : black;
+			}			
+		</style>
+		<script type="text/javascript" src="utility.js"></script>
+		<script type="text/javascript" src="sprite.js"></script>
+		<script type="text/javascript" src="canvas.js"></script>
+		<script type="text/javascript">						
+			var ds = new Sprite({
+				width : 540,
+				height : 380,
+				location : [50, 50],
+				sx : 1,
+				sy : 1,
+				stroke : "yellow",
+				movement : "d",
+				onmouseclick : function(p) {
+					this.add(new Sprite({
+						location : [p[0] - 10, p[1] - 10],
+						r : -this.r(),
+						width : 20,
+						height : 20,
+						stroke : "red",
+						movement : "d",
+						oncollides : function(sprite) {	
+							this.parent().remove(this);
+						},
+						image : "flower.png"
+					}));
+				},
+				onmousemove : function() {
+					console.log("MOVE");
+				},
+				onmousedrag : function() {
+					console.log("DRAG");
+				}, 
+				onmousedown : function() {
+					console.log("DOWN");
+				},
+				onmouseup : function() {
+					console.log("UP");
+				},
+				onmousein : function() {
+					console.log("IN");
+				},
+				onmouseout : function() {
+					console.log("OUT");
+				}
+			})/*.add(new Sprite({
+				location : [10, 360],
+				width : 100,
+				height : 10,
+				stroke : "yellow"
+			})).add(new Sprite({
+				location : [150, 360],
+				width : 100,
+				height : 10,
+				stroke : "yellow"
+			})).add(new Sprite({
+				location : [290, 360],
+				width : 100,
+				height : 10,
+				stroke : "yellow"
+			})).add(new Sprite({
+				location : [430, 360],
+				width : 100,
+				height : 10,
+				stroke : "yellow"
+			})).add(new Sprite({
+				location : [10, 10],
+				width : 100,
+				height : 10,
+				stroke : "yellow"
+			})).add(new Sprite({
+				location : [150, 10],
+				width : 100,
+				height : 10,
+				stroke : "yellow"
+			})).add(new Sprite({
+				location : [290, 10],
+				width : 100,
+				height : 10,
+				stroke : "yellow"
+			})).add(new Sprite({
+				location : [430, 10],
+				width : 100,
+				height : 10,
+				stroke : "yellow"
+			})).add(new Sprite({
+				location : [10, 60],
+				width : 10,
+				height : 110,
+				stroke : "yellow"
+			})).add(new Sprite({
+				location : [10, 210],
+				width : 10,
+				height : 110,
+				stroke : "yellow"
+			})).add(new Sprite({
+				location : [520, 60],
+				width : 10,
+				height : 110,
+				stroke : "yellow"
+			})).add(new Sprite({
+				location : [520, 210],
+				width : 10,
+				height : 110,
+				stroke : "yellow"
+			}))*/;		
+			var cvs = new Canvas();
+			cvs.addScreen("scene", ds);
+			cvs.start(function() {
+				cvs.fullScreen();
+			});
+		</script>
+	</head>
+	<body>
+		<div>
+			<canvas></canvas>
+		</div>
+	</body>
+</html>
