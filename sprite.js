@@ -9,7 +9,7 @@ function Sprite(model, constructor) {
 	this.dr = model.dr || 0;
 	this.sx = model.sx || 1;
 	this.sy = model.sy || 1;
-	this.limit = model.limit || (1.0 / 0);
+	this.limit = model.limit || (1 / 0);
 	this.rows = model.rows || 1;
 	this.priority = model.priority || 0;
 	this.columns = model.columns || 1;
@@ -40,14 +40,14 @@ function Sprite(model, constructor) {
 	this.onmouseout = model.onmouseout;
 	this.onmousemove = model.onmousemove;
 	this.collidesWith = model.collidesWith || {};
-	this.movement = model.movement || "s";
+	this.movement = model.movement || "s"; //movement type
 	this.font = model.font || "10px sans-serif";
 	this.text = model.text || "";
-	this.onadd = model.onadd;
+	this.onadd = model.onadd; //when i am added to something
 	this.draggable = model.draggable || false;
 	this.ondrop = model.ondrop || {};
 	this.holding = [];
-	this.visible = model.visible || 1;
+	this.visible = model.visible !== false && model.visible !== 0 ? 1 : model.visible;
 	if(model.init) {
 		model.init.call(this);
 	}
@@ -59,6 +59,7 @@ function Sprite(model, constructor) {
 
 Sprite.prototype.draw = function(ctx) {
 	if(this.visible) {
+		var image = this.image;
 		if(image || this.shape == "r") {
 			this.matrix = ctx.getTransform();
 		}
@@ -66,9 +67,8 @@ Sprite.prototype.draw = function(ctx) {
 		ctx.scale(this.sx, this.sy);
 		ctx.translate(this.width / 2 + this.location[0] / this.sx, this.height / 2 + this.location[1] / this.sy);
 		ctx.rotate(this.r);		
-		var image = this.image;
 		if(image && image.complete) {
-			var sw = (this.image.width / this.columns), sh = (this.image.height / this.rows);
+			var sw = (image.width / this.columns), sh = (image.height / this.rows);
 			ctx.drawImage(image, 
 				sw * (this.index % this.columns),  sh * Math.floor(this.index / this.columns), sw, sh,
 				-this.width / 2, -this.height / 2, this.width, this.height);
@@ -114,8 +114,8 @@ Sprite.prototype.draw = function(ctx) {
 			}
 			if(mouse.request.down) {
 				if(this.draggable) {
-					if(ctx.dragging && ctx.dragging.droppable) {
-						ctx.dragging.drop(ctx.dragging.droppable, 0);
+					if(ctx.dragging && ctx.dragging.droppable) { //this guarentees that I get the top sprite
+						ctx.dragging.drop(ctx.dragging.droppable, 0); //drops the bottom sprites
 					}
 					ctx.dragging = this;
 					this.take();
@@ -124,10 +124,10 @@ Sprite.prototype.draw = function(ctx) {
 				if(this.onmousedown) {
 					this.onmousedown(l);
 				}
-				mouse.downon.push(this);
+				mouse.downon.push(this); //for future click event
 			} else if(mouse.request.up) {
-				if(ctx.dragging) {
-					ctx.dragging.drop(this);
+				if(ctx.dragging) { //should i reset the draggable if i can drop?
+					ctx.dragging.drop(this); //drop the draggable on this
 				}
 				if(this.onmouseup) {
 					this.onmouseup(l);
@@ -139,7 +139,7 @@ Sprite.prototype.draw = function(ctx) {
 			if(mouse.request.move && this.onmousemove) {
 				this.onmousemove(l);
 			}
-		} else if (this.ismousein){
+		} else if (this.ismousein) {
 			if(this.onmouseout) {
 				this.onmouseout(l);
 			}
@@ -208,8 +208,8 @@ Sprite.prototype.collision = function(sprite) {
 	for(var i = 0; i < s.length && (!sprite || !i); i++) {
 		for(var j = i + 1; j < s.length; j++) {
 			var s1 = sprite || s[i], s2 = s[j], 
-				c1 = s1.collidesWith[s2.type] || s1.collidesWith["*"], 
-				c2 = s2.collidesWith[s1.type] || s2.collidesWith["*"];
+				c1 = s1.collidesWith[s2.type] || s1.collidesWith[""], 
+				c2 = s2.collidesWith[s1.type] || s2.collidesWith[""];
 			if((s1.movement == "d" || s2.movement == "d") && (c1 || c2)) {
 				var p1 = s1.points || s1.getTransformedPoints(), p2 = s2.points || s2.getTransformedPoints(), intersects = false;
 				for(var k = 0; !intersects && k < p1.length; k++) {
@@ -242,8 +242,7 @@ Sprite.prototype.drop = function(s, b) {
 	if(d && s.holding.length < s.limit) {
 		s.holding.push(this);
 		this.droppable = s;
-		(b !== 0) && (b !== false) && d.call(this, s);
-		return 1;
+		return (b !== 0) && (b !== false) && (d.call(this, s) || 1);
 	}
 };
 
@@ -258,13 +257,8 @@ Sprite.prototype.take = function() {
 };
 
 Sprite.prototype.remove = function(o) {
-	for(var i = 0; i < this.sprites.length; i++) {
-		if(this.sprites[i] == o) {
-			o.parent = null;
-			this.sprites.splice(i, 1);
-			break;
-		}
-	}
+	this.sprites.remove(o);
+	o.parent = null;
 	return this;
 };
 	

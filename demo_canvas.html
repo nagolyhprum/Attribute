@@ -8,7 +8,7 @@
 		</style>
 		<script type="text/javascript" src="utility.js"></script>
 		<script type="text/javascript" src="sprite.js"></script>
-		<script type="text/javascript" src="canvas.js"></script>
+		<script type="text/javascript" src="C2D.js"></script>
 		<script type="text/javascript">						
 			var ds = new Sprite({
 				width : 540,
@@ -19,9 +19,10 @@
 				stroke : "yellow",
 				movement : "d",
 				onmouseclick : function(p) {
+					console.log("CLICK");
 					this.add(new Sprite({
 						location : [p[0] - 10, p[1] - 10],
-						r : -this.r(),
+						r : -this.r,
 						width : 20,
 						height : 20,
 						stroke : "red",
@@ -111,16 +112,16 @@
 				height : 110,
 				stroke : "yellow"
 			}))*/;		
-			var cvs = new Canvas();
-			cvs.addScreen("scene", ds);
-			cvs.start(function() {
+			var cvs = new C2D("screen", function() {
+				cvs.setScreen("scene", ds);
 				cvs.fullScreen();
+				cvs.start();
 			});
 		</script>
 	</head>
 	<body>
 		<div>
-			<canvas></canvas>
+			<canvas id="screen"></canvas>
 		</div>
 	</body>
 </html>

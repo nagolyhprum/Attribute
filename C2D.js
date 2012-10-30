@@ -1,22 +1,22 @@
 (function() { //init C2D
 	function C2D(id, f) {
-		var me = this;
+		var me = this;		
+		me.matrix = M();
+		me.screens = {};
+		me.stack = [];
+		me.livemouse = { 
+			request : {
+				//down : false,
+				//up : false,
+				//move : false,
+				//drag : false
+			},
+			downon : [],
+			location : [0, 0, 0]
+		};
 		ready(function() {
-			var cvs = me.cvs = $(id);
+			var cvs = me.cvs = document.getElementById(id);
 			me.ctx = cvs.getContext("2d");
-			me.matrix = M();
-			me.screens = {};
-			me.stack = [];
-			me.livemouse = { 
-				request : {
-					//down : false,
-					//up : false,
-					//move : false,
-					//drag : false
-				},
-				downon : [],
-				location : [0, 0, 0]
-			};
 			cvs.width = 640;
 			cvs.height = 480;
 			cvs.onmouseout = function(e) {
@@ -125,15 +125,11 @@
 		};
 
 		C2D.prototype.setScreen = function(name, sprite) {
-			if(!this.activeScreen) {
-				this.activeScreen = name;
+			this.activeScreen = name;
+			if(sprite) {
+				this.screens[name] = sprite;
 			}
-			this.screens[name] = sprite;
 			return this;
-		};
-
-		C2D.prototype.changeScreen = function(name) {
-			this.activeScreen = name || this.activeScreen;
 		};
 
 		C2D.prototype.stop = function() {
@@ -180,7 +176,7 @@
 				me.livemouse.lastlocation = me.livemouse.location;
 				me.livemouse.location = getMouseLocation(e);
 				var o = offset(me.livemouse.lastlocation, me.livemouse.location);
-				if(me.dragging) {
+				if(me.dragging) { //move the element i am dragging
 					var l = me.dragging.location;
 					l[0] += o[0];
 					l[1] += o[1];
@@ -209,15 +205,15 @@
 						drag : me.livemouse.request.drag
 					},
 					downon : me.livemouse.downon.slice(0),
-					location : me.livemouse.location.slice(0)
+					location : me.livemouse.location.slice(0),
+					lastlocation : (me.livemouse.lastlocation || [0, 0, 1]).slice(0)
 				};
 				//process drawing
 				me.clearRect(0, 0, me.cvs.width, me.cvs.height);
-				me.screens[me.activeScreen].update().collision().draw(me);
+				me.screens[me.activeScreen].collision().update().draw(me);
 				//process mouse
-				me.livemouse.downon = me.deadmouse.downon;
 				if(me.deadmouse.request.up) {
-					me.livemouse.downon = [];
+					me.deadmouse.downon = [];
 					if(me.dragging) {
 						if(!me.dragging.willStick) {
 							me.dragging.location = me.dragging.oldLocation;
@@ -225,9 +221,10 @@
 								me.dragging.drop(me.dragging.droppable);
 							}
 						}
-						me.dragging = 0;		
+						me.dragging = 0;
 					}
 				}
+				me.livemouse.downon = me.deadmouse.downon;
 				me.livemouse.request = {};
 			}, 1000 / 60);
 		};		

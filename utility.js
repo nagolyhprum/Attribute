@@ -1,7 +1,7 @@
 function img(src, onload) {
 	var i, e;
 	if(!(i = img.CACHE[src])) {
-		i = img.CACHE[src] = document.createElement("img");
+		i = img.CACHE[src] = new Image();
 		i.src = src;
 	}
 	if(onload) {
@@ -21,27 +21,6 @@ function img(src, onload) {
 }
 img.CACHE = {};
 img.EVENTS = {};
-
-function $(id) {
-	return document.getElementById(id);
-}
-
-function createElement(s) {
-	var span = document.createElement("span");
-	span.innerHTML = s;
-	return span.children[0];
-}
-
-function rotate(point, degree, pivot) {
-	pivot = pivot || [0, 0];
-	pivot[0] = pivot.x || 0;
-	pivot[1] = pivot.y || 0;
-	var curr = Math.atan2(point[1] - pivot[1], point[0] - pivot[0]);
-	curr += degree;
-	var radius = Math.sqrt(Math.pow(point[0] - pivot[0], 2) + Math.pow(point[1] - pivot[1], 2));
-	point[0] = radius * Math.cos(curr) + pivot[0];
-	point[1] = radius * Math.sin(curr) + pivot[1];
-}	
 
 var __ERROR = 0.1;
 
@@ -66,14 +45,12 @@ function getLineLineIntersection(p1, p2, p3, p4) {
 	return null;
 }
 
-/*
-	returns a point representing the number of units that p1 must move to be equal to p2
-*/
 function length(p1, p2) {
 	var x = p2[0][0] - p1[0][0], y = p2[1][0] - p1[1][0];
 	return Math.sqrt(x * x + y * y);
 }
 
+//returns a point representing the number of units that p1 must move to be equal to p2
 function offset(p1, p2) {
 	return [p2[0] - p1[0], p2[1] - p1[1], 0];
 }
@@ -143,34 +120,6 @@ function multiply(m, n) {
 				sum += (m[i][k] === undefined ? m[i] : m[i][k]) * (n[k][j] === undefined ? n[k] : n[k][j]);
 			}
 			r[i][j] = sum;
-		}
-	}
-	return r;
-}
-
-function add(m, n) {
-	var r = [];
-	if(m.length != n.length || m[0].length != n[0].length) {
-		throw "Matrix dimensions must be equivalent.";
-	}
-	for(var i = 0; i < m.length; i++) {
-		r[i] = [];
-		for(var j = 0; j < m[0].length; j++) {
-			r[i][j] = m[i][j] + n[i][j];
-		}
-	}
-	return r;
-}
-
-function subtract(m, n) {
-	var r = [];
-	if(m.length != n.length || m[0].length != n[0].length) {
-		throw "Matrix dimensions must be equivalent.";
-	}
-	for(var i = 0; i < m.length; i++) {
-		r[i] = [];
-		for(var j = 0; j < m[0].length; j++) {
-			r[i][j] = m[i][j] - n[i][j];
 		}
 	}
 	return r;
