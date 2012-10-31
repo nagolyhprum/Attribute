@@ -101,8 +101,10 @@ Array.prototype.indexOf = Array.prototype.indexOf || function(e) {
 };
 
 function getMouseLocation(e) {
-	var el = e.currentTarget, xratio = el.width / el.clientWidth, yratio = el.height / el.clientHeight;		
-	return [e.clientX * xratio, e.clientY * yratio, 1];
+	var el = e.currentTarget, xratio = el.width / el.clientWidth, yratio = el.height / el.clientHeight;	
+	var x = e.pageX - el.offsetLeft;
+	var y = e.pageY - el.offsetTop;	
+	return [x * xratio, y * yratio, 1];
 }
 
 //MATRIX

@@ -1,0 +1,259 @@
+<!doctype html>
+<html>
+	<body>
+		<div id="canvas"></div>
+		<div id="dom"></div>
+		<script type="text/javascript">
+			//Base64Encoder						
+			if(!window.btoa) {
+				var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+						+ "abcdefghijklmnopqrstuvwxyz"
+						+ "0123456789"
+						+ "+/";
+				window.btoa = function(s) {
+					var f = s.charCodeAt, r = "", i = 0;
+					for(; i + 2 < s.length;) {
+						var b = (f.call(s, i++) << 16) | (f.call(s, i++) << 8) | f.call(s, i++);
+						r += b64[(b >> 18) & 63] + 
+							 b64[(b >> 12) & 63] + 
+						 	 b64[(b >> 6) & 63] + 
+							 b64[b & 63];
+					}
+					if(i + 1 == s.length) {
+						var b = f.call(s, i);
+						r += b64[(b >> 2) & 63] + b64[(b << 4) & 63] + "==";
+					} else if(i + 2 == s.length) {
+						var b = (f.call(s, i) << 8) | f.call(s, i + 1);
+						r += b64[(b >> 10) & 63] + 
+							b64[(b >> 4) & 63] + 
+							b64[(b << 2) & 63] + "=";
+					}
+					return r;
+				};
+			}
+			
+			alert(window.btoa("pleasu"));
+			alert(window.btoa("pleasur"));
+			alert(window.btoa("pleasure"));
+			
+			function asBytes(i) {
+				var r = "";
+				for(var j = 0; j < 4; j++) {
+					r += String.fromCharCode(i & 255); 
+					i >>= 8;
+				}
+				return r;
+			}
+		
+		
+			function getBMPUrl(data, width, height) {
+				var f = String.fromCharCode,
+					//BMP
+					s = "BM" 
+					+ asBytes(54 + data.length) //image size
+					+ "\0\0\0\0" //reserved
+					+ "6\0\0\0" //data offset
+					//DIB
+					+ ")\0\0\0" //header size
+					+ asBytes(width) //width
+					+ asBytes(height) //height
+					+ f(1) + "\0"  //color panel
+					+ " \0" //bits per pixel
+					+ "\0\0\0\0" //compression
+					+ asBytes(data.length) //raw data size
+					+ f(19) + f(11) + "\0\0" //pixels/meter h 2835
+					+ f(19) + f(11) + "\0\0" //pixels/meter v 2835
+					+ "\0\0\0\0" //pallette colors
+					+ "\0\0\0\0"; //important colors
+				for(var i = height - 1; i >= 0; i--) {
+					for(var j = 0; j < width; j++) {
+						var k = ((i * width) + j) * 4;
+						s += f(data[k + 2]) + f(data[k + 1]) + f(data[k]) + f(data[k + 3]);
+					}
+				}
+				return "data:image/bmp;base64," + window.btoa(s);
+			}
+			var data = [
+				255, 0, 0, 255,
+				0, 255, 0, 255,
+				0, 0, 255, 255,
+				255, 255, 0, 255,
+				255, 0, 255, 255,
+				0, 255, 255, 255
+			];
+			var i = document.createElement("img");
+			i.src =  getBMPUrl(data, 2, 3);
+			document.body.appendChild(i);
+		
+			function Canvas(id, width, height, dom) {
+				this.cvs = document.createElement("canvas");
+				this.stack = [];
+				this.state = [[1,0,0],[0,1,0],[0,0,1]];
+				if(!(!dom && this.cvs.getContext && (this.ctx = this.cvs.getContext("2d")))) {
+					this.cvs = document.createElement("div");
+					this.cvs.style.width = width + "px";
+					this.cvs.style.height = height + "px";
+					this.cvs.style.position = "relative";
+					this.cvs.style.overflow = "hidden";
+				} else {
+					this.cvs.width = width;
+					this.cvs.height = height;
+				}
+				this.cvs.style.background = this.fillStyle = this.strokeStyle = "black";
+				this.lineWidth = 1;
+				(this.parent = document.getElementById(id)).appendChild(this.cvs);
+			}
+			
+			Canvas.prototype.save = function() {
+				if(this.ctx) {
+					this.ctx.save();
+				} else {
+					this.stack.push(this.state.slice(0));
+				}
+			};
+			
+			Canvas.prototype.restore = function() {
+				if(this.ctx) {
+					this.ctx.restore();
+				} else {
+					this.state = this.stack.pop();
+				}
+			};
+			
+			Canvas.prototype.drawImage = function(img, sx, sy, sw, sh, dx, dy, dw, dh) {
+				if(this.ctx) {
+					this.ctx.drawImage.apply(this.ctx, arguments);
+				} else {		
+					var i = img.cloneNode(false);
+					i.style.position = "absolute";
+					if(arguments.length == 3) {
+						i.style.left = sx + "px";
+						i.style.top = sy + "px";
+						this.cvs.appendChild(i);
+					} else if(arguments.length == 5) {
+						i.style.left = sx + "px";
+						i.style.top = sy + "px";
+						i.style.width = sw + "px";
+						i.style.height = sh + "px";
+						this.cvs.appendChild(i);
+					} else if(arguments.length == 9) {
+						i.style.left = -sx * dw / sw + "px";
+						i.style.top = -sy * dh / sh + "px";
+						i.width = img.width * dw / sw;
+						i.height = img.height * dh / sh;
+						var div = document.createElement("div");
+						div.style.position = "relative";
+						div.style.left = dx + "px";
+						div.style.top = dy + "px";
+						div.style.width = dw + "px";
+						div.style.height = dh + "px";
+						div.style.overflow = "hidden";
+						div.appendChild(i);
+						this.cvs.appendChild(div);
+					}
+				}
+			};
+			
+			Canvas.prototype.clearRect = function(x, y, w, h) {
+				if(this.ctx) {
+					this.ctx.clearRect(x, y, w, h);
+				} else {
+					var div = document.createElement("div");
+					div.style.background = this.cvs.style.background;
+					div.style.position = "absolute";
+					div.style.left = x + "px";
+					div.style.top = y + "px"; 
+					div.style.width = w + "px";
+					div.style.height = h + "px";
+					this.cvs.appendChild(div);
+				}
+			};
+
+			Canvas.prototype.strokeRect = function(x, y, w, h) {
+				if(this.ctx) {
+					this.ctx.lineWidth = this.lineWidth;
+					this.ctx.strokeStyle = this.strokeStyle ;
+					this.ctx.strokeRect(x, y, w, h);
+				} else {
+					x -= Math.floor(this.lineWidth / 2);
+					y -= Math.floor(this.lineWidth / 2);
+					w -= this.lineWidth;
+					h -= this.lineWidth;
+					var div = document.createElement("div");
+					div.style.position = "absolute";
+					div.style.left = x + "px";
+					div.style.top = y + "px";
+					div.style.width = w + "px";
+					div.style.height = h + "px";
+					div.style.border = this.lineWidth + "px solid " + this.strokeStyle;
+					this.cvs.appendChild(div);
+				}
+			};
+
+			Canvas.prototype.fillRect = function(x, y, w, h) {
+				if(this.ctx) {
+					this.ctx.fillStyle = this.fillStyle ;
+					this.ctx.fillRect(x, y, w, h);
+				} else {
+					var div = document.createElement("div");
+					div.style.position = "absolute";
+					div.style.left = x + "px";
+					div.style.top = y + "px";
+					div.style.width = w + "px";
+					div.style.height = h + "px";
+					div.style.background = this.fillStyle;
+					this.cvs.appendChild(div);
+				}
+			};
+			
+			function img(src, onload) {
+				var i, e;
+				if(!(i = img.CACHE[src])) {
+					i = img.CACHE[src] = document.createElement("img");
+					i.src = src;
+				}
+				if(onload) {
+					if(i.complete) {
+						onload(i);
+					} else {
+						if(!(e = img.EVENTS[src])) {
+							e = img.EVENTS[src] = [];
+							i.onload = function() {
+								for(var j in e){e[j](i);}
+							};
+						}
+						e.push(onload);
+					}
+				}
+				return i;
+			}
+			img.CACHE = {};
+			img.EVENTS = {};
+			
+			var cvs = new Canvas("canvas", 320, 240);
+			var dom = new Canvas("dom", 320, 240, true);
+			
+			img("http://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Liliumbulbiferumflowertop.jpg/220px-Liliumbulbiferumflowertop.jpg", function(i) {
+				cvs.drawImage(i, 0, 0);
+				cvs.drawImage(i, 50, 50, 50, 50);
+				cvs.drawImage(i, 50, 50, 50, 50, 10, 10, 20, 20);
+				cvs.clearRect(10, 10, 50, 50);
+				cvs.lineWidth = 5;
+				cvs.strokeStyle = "white";
+				cvs.strokeRect(75, 75, 15, 15);
+				cvs.fillStyle = "blue";
+				cvs.fillRect(300, 200, 25, 25);
+				
+				dom.drawImage(i, 0, 0);
+				dom.drawImage(i, 50, 50, 50, 50);
+				dom.drawImage(i, 50, 50, 50, 50, 10, 10, 20, 20);
+				dom.clearRect(10, 10, 50, 50);
+				dom.lineWidth = 5;
+				dom.strokeStyle = "white";
+				dom.strokeRect(75, 75, 15, 15);
+				dom.fillStyle = "blue";
+				dom.fillRect(300, 200, 25, 25);
+			});
+		</script>
+	</body>
+</html>

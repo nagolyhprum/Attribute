@@ -6,6 +6,7 @@
 			canvas {
 				border : 1px solid black;
 				border-radius : 5px;
+				background : white;
 			}
 		</style>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
@@ -45,11 +46,11 @@
 						img(current_question.image, function(img) {
 							image.image = img;
 							var split = current_question.text.split(/\s+/g);
+							split.shuffle();
 							hideAll();
 							for(var i = 0; (i < MAX_WORDS) && (i < split.length); i++) {
 								draggableWords[i].sprites[0].text = split[i];
-								draggableWords[i].visible = 1
-								draggableWords[i].drop(droppableWords_q[i]);
+								draggableWords[i].visible = 1;
 								droppableWords_q[i].visible = 1;
 								droppableWords_a[i].visible = 1;
 							}
@@ -58,6 +59,9 @@
 					
 					function hideAll() {
 						for(var i = 0; i < MAX_WORDS; i++) {
+							draggableWords[i].take();
+							draggableWords[i].drop(droppableWords_q[i]);
+							draggableWords[i].text = 0;
 							draggableWords[i].visible = 0;
 							droppableWords_q[i].visible = 0;
 							droppableWords_a[i].visible = 0;
@@ -130,6 +134,7 @@
 					screen.add(new Sprite({ //button
 						borderradius : 5,
 						stroke : "#666666",
+						type : "submit",
 						fill : "#000000",
 						init : function() {
 							this.add(new Sprite({
@@ -138,6 +143,7 @@
 								text : "Submit"
 							}));
 						},
+						/*
 						onmousedown : function() {							
 							this.fill = "#0078a3";
 						},
@@ -153,9 +159,24 @@
 						},	
 						onmouseout : function() {
 							this.fill = "#000000";
-						},	
+						},
+						*/
 						onmouseclick : function() {
-							//todo
+							var answer = "";
+							for(var i = 0; i < MAX_WORDS; i++) {
+								var holding = droppableWords_a[i].holding;
+								if(!holding.length) {
+									break;
+								}
+								var text = holding[0].sprites[0].text;
+								if(answer) {
+									answer = answer + " ";
+								}
+								answer = answer + text;
+							}
+							if(current_question.text === answer) {
+								setUpScene();
+							}
 						},
 						width : WIDTH,
 						height : HEIGHT,
@@ -170,10 +191,30 @@
 						}));
 						screen.add(new Sprite(draggableWord));
 					}
+					
 					var draggableWords = screen.find({type:"draggable"}),
 						droppableWords_q = screen.find({type:"droppable_q"}),						
 						droppableWords_a = screen.find({type:"droppable_a"}),
-						image = screen.find({type:"image"})[0];
+						image = screen.find({type:"image"})[0],
+						submit = screen.find({type:"submit"})[0];
+					
+					img("images/ui-bg_gloss-wave_30_3d3644_500x100.png", function(img) { //background
+						screen.fill = cvs.context().createPattern(img, "repeat");
+					});
+					
+					img("images/ui-bg_flat_55_994d53_40x100.png", function(img) { //word
+						for(var i = 0; i < MAX_WORDS; i++) {
+							draggableWords[i].fill = cvs.context().createPattern(img, "repeat");
+						}
+					});
+					
+					img("images/ui-bg_highlight-soft_25_30273a_1x100.png", function(img) { //dropzones
+						for(var i = 0; i < MAX_WORDS; i++) {
+							droppableWords_q[i].fill = cvs.context().createPattern(img, "repeat");
+							droppableWords_a[i].fill = cvs.context().createPattern(img, "repeat");
+						}
+						submit.fill = cvs.context().createPattern(img, "repeat");
+					});
 					setUpScene();
 					cvs.setScreen("screen", screen).start();
 				});
