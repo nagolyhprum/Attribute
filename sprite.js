@@ -9,11 +9,13 @@ function Sprite(model, constructor) {
 	this.dr = model.dr || 0;
 	this.sx = model.sx || 1;
 	this.sy = model.sy || 1;
+	this.animation = {};
 	this.limit = model.limit || (1 / 0);
 	this.rows = model.rows || 1;
 	this.priority = model.priority || 0;
 	this.columns = model.columns || 1;
 	this.borderradius = model.borderradius || 0;
+	this.animations = model.animations;
 	if(model.image) {
 		var me = this;
 		img(model.image, function(img) {
@@ -56,6 +58,11 @@ function Sprite(model, constructor) {
 	}
 	this.willStick = false;
 }
+
+Sprite.prototype.animate = function(name) {
+	this.animation.name = name;
+	this.animation.index = 0;
+};
 
 Sprite.prototype.draw = function(ctx) {
 	if(this.visible) {
@@ -166,6 +173,21 @@ Sprite.prototype.update = function() {
 	for(var i = 0; i < this.sprites.length; i++) {				
 		var s = this.sprites[i];		
 		s.update();
+	}
+	if(this.animation.name) {
+		var a = this.animations[this.animation.name];
+		this.animation.index++;
+		if(a.sequence.length == this.animation.index) {
+			this.animation.index = 0;
+			if(a.next) {
+				if(typeof a.next == "string") {
+					a = this.animations[this.animation.name = a.next];
+				} else if(typeof a.next == "function") {
+					a.next(this);
+				}
+			}
+		}
+		this.index = a.sequence[this.animation.index];
 	}
 	this.points = null;
 	return this;

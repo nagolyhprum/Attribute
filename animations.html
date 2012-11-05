@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+	<head>
+		<script type="text/javascript" src="C2D.js"></script>
+		<script type="text/javascript" src="sprite.js"></script>
+		<script type="text/javascript" src="utility.js"></script>
+		<script type="text/javascript">
+			function H(start, end, times) {
+				var r = [];
+				for(; start < end; start++) {
+					for(var i = 0; i < times; i++) {
+						r.push(start);
+					}
+				}
+				return r;
+			}
+			var times = 10, animations = {
+				"up" : {
+					sequence : [0]
+				},
+				"animation-up" : {
+					sequence : H(1, 9, times),
+					next : "animation-left"
+				},
+				"left" : {
+					sequence : [9]
+				},
+				"animation-left" : {
+					sequence : H(10, 18, times),
+					next : "animation-down"
+				},
+				"down" : {
+					sequence : [18]
+				},
+				"animation-down" :  {
+					sequence : H(19, 27, times),
+					next : "animation-right"
+				},
+				"right" : {
+					sequence : [27]
+				},
+				"animation-right" :  {
+					sequence : H(28, 36, times),
+					next : "animation-up"
+				}
+			};
+			function addSprite(sprite, image) {
+				sprite.add(new Sprite({
+					image : "images/character/walkcycle/" + image + ".png",
+					columns : 9,
+					rows : 4,
+					animations : animations
+				}, function() {
+					this.animate("animation-up");
+				}));
+			}
+			var walkcycle = {
+					width : 64,
+					height : 64,
+					init : function() {
+						addSprite(this, "BODY_male");
+						addSprite(this, "HEAD_plate_armor_helmet");
+						addSprite(this, "LEGS_plate_armor_pants");
+						addSprite(this, "TORSO_plate_armor_torso");
+						addSprite(this, "TORSO_plate_armor_arms_shoulders");
+						addSprite(this, "FEET_plate_armor_shoes");
+						addSprite(this, "HANDS_plate_armor_gloves");
+						addSprite(this, "WEAPON_shield_cutout_body");
+					}
+			};
+			var spriteset = new Sprite({
+				width : 64,
+				height : 64
+			}, function() {
+				this.add(new Sprite(walkcycle));
+			});
+			var c2d = new C2D("screen", function() {
+				c2d.setScreen("screen", spriteset);
+				c2d.start();
+			});
+		</script>
+	</head>
+	<body>
+		<canvas id="screen">Canvas not supported.</canvas>
+	</body>
+</html>
