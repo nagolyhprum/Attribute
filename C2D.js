@@ -6,45 +6,66 @@
 		me.stack = [];
 		me.livemouse = { 
 			request : {
-				//down : false,
-				//up : false,
-				//move : false,
-				//drag : false
+				down : false,
+				up : false,
+				move : false,
+				drag : false
 			},
 			downon : [],
 			location : [0, 0, 0]
 		};
+        me.livekeyboard = {};
 		ready(function() {
 			var cvs = me.cvs = document.getElementById(id);
 			me.ctx = cvs.getContext("2d");
 			cvs.width = 640;
 			cvs.height = 480;
-			cvs.onmouseout = function(e) {
+			cvs.onblur = cvs.onmouseout = function(e) {
 				me.livemouse.downon = [];
 				me.livemouse.isdown = false;
 				me.livemouse.request.up = true;
+                me.livekeyboard = {};
+                handled = {};
 			};	
-			cvs.onmousemove = cvs.touchmove = function(e) { 
-				e.preventDefault(); 
+            cvs.addEventListener('touchmove', cvs.onmousemove = function(e) { 
+    			e.preventDefault(); 
+                cvs.focus();
 				if(e.touches) { 
 					e = e.touches[0]; 
 				} 
 				mousemove(e, me); 
-			};
-			cvs.onmouseup = cvs.touchend = function(e) { 
-				e.preventDefault(); 
+			}, false);
+            cvs.addEventListener('touchend', cvs.onmouseup = function(e) { 
+    			e.preventDefault(); 
+                cvs.focus();
 				if(e.touches) { 
 					e = e.touches[0]; 
 				} 
 				mouseupdown(e, false, me); 
-			};
-			cvs.onmousedown = cvs.touchstart = function(e) { 
-				e.preventDefault(); 
+			}, false);
+            cvs.addEventListener('touchstart', cvs.onmousedown = function(e) { 
+    			e.preventDefault(); 
+                cvs.focus();
 				if(e.touches) { 
 					e = e.touches[0]; 
 				} 
 				mouseupdown(e, true, me); 
-			};
+			}, false);
+            var handled = {};
+            cvs.onkeydown = function(e) {
+                var key = getKey(e.keyCode || e.which);
+                if(!handled[key]) {
+                    me.livekeyboard[key] = "pressed";
+                    handled[key] = true;
+                } else {
+                    me.livekeyboard[key] = "down";
+                }
+            };
+            cvs.onkeyup = function(e) {
+                var key = getKey(e.keyCode || e.which);
+                me.livekeyboard[key] = "up";
+                handled[key] = false;
+            };
 			cvs.innerHTML = "The &lt;CANVAS&gt; element is not supported.";
 			cvs.tabIndex = 1;
 			if(f && me.isSupported) {
@@ -52,6 +73,15 @@
 			}
 		});
 	}
+    function getKey(keycode) {
+        switch(keycode) {
+            case 37 : return "left";
+            case 38 : return "up";
+            case 39 : return "right";
+            case 40 : return "down";
+            default : return String.fromCharCode(keycode);
+        }
+    }
 	if(window.CanvasRenderingContext2D) {
 		C2D.prototype.strokeText = function(t, x, y, w) {
 			this.ctx.strokeStyle = this.strokeStyle;
@@ -195,6 +225,7 @@
 
 		C2D.prototype.start = function() {
 			var me = this;
+            me.lastTime = new Date();
 			me.interval = setInterval(function() {
 				//process mouse
 				me.deadmouse = { 
@@ -208,9 +239,13 @@
 					location : me.livemouse.location.slice(0),
 					lastlocation : (me.livemouse.lastlocation || [0, 0, 1]).slice(0)
 				};
+                me.deadkeyboard = me.livekeyboard;
+                me.livekeyboard = {};
 				//process drawing
-				me.clearRect(0, 0, me.cvs.width, me.cvs.height);
-				me.screens[me.activeScreen].collision().update().draw(me);
+				me.clearRect(0, 0, me.cvs.width, me.cvs.height);                
+                me.currentTime = new Date() - me.lastTime;
+                me.lastTime = new Date();
+				me.screens[me.activeScreen].collision().update(me.currentTime).draw(me);
 				//process mouse
 				if(me.deadmouse.request.up) {
 					me.deadmouse.downon = [];
@@ -232,6 +267,10 @@
 		C2D.prototype.mouse = function() {
 			return this.deadmouse;
 		};
+        
+        C2D.prototype.keyboard = function() {
+            return this.deadkeyboard;
+        };
 		
 		C2D.prototype.screen = function(name) {
 			return this.screens[name];
@@ -252,7 +291,6 @@
 		};
 	} else {
 		C2D.prototype.isSupported = false;
-	}
-	
+	}	
 	window.C2D = C2D;
 }());
