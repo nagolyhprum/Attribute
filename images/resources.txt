@@ -2,3 +2,6 @@ http://opengameart.org/content/lpc-medieval-fantasy-character-sprites
 http://opengameart.org/content/cave-tileset-0
 http://letsmakegames.org/resources/art-assets-for-game-developers/
 http://www.reinerstilesets.de/
+http://opengameart.org/content/win-music-1
+http://opengameart.org/art-search-advanced?keys=.mp3&field_art_type_tid%5B%5D=12&field_art_licenses_tid%5B%5D=6&field_art_licenses_tid%5B%5D=5&field_art_tags_tid_op=and&field_art_tags_tid=&name=&sort_by=created&sort_order=DESC&Collection=
+http://opengameart.org/content/heroism

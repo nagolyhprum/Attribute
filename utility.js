@@ -22,6 +22,48 @@ function img(src, onload) {
 img.CACHE = {};
 img.EVENTS = {};
 
+function audio(src, callback, ext) {
+    var channel = audio.CHANNELS[src];
+    if(channel) {        
+        for(var i = 0; i < channel.length; i++) {
+            var a = channel[i];
+            if(a.ended || a.paused && a.readyState == a.HAVE_ENOUGH_DATA) {
+                a.addEventListener("ended", function() {
+                    a.removeEventListener("ended", arguments.callee, false);
+                    callback && callback();
+                });
+                a.play();
+                return;
+            }
+        }
+    } else {
+        audio.CHANNELS[src] = [];
+    }
+    var a;
+    audio.CHANNELS[src].push(a = new Audio());
+    a.addEventListener("ended", function() {
+        a.removeEventListener("ended", arguments.callee, false);
+        callback && callback();
+    });
+    a.autoplay = true;
+    a.loop = false;
+    a.src = src + "." + (ext || audio.SUPPORTED[0]);
+}
+audio.CHANNELS = {};
+audio.SUPPORTED = [];
+(function() {
+    var a = new Audio();
+    if(a.canPlayType) {
+        if(a.canPlayType('audio/mpeg;') != "no") {
+            audio.SUPPORTED.push("mp3");
+        } else if(a.canPlayType('audio/wav; codecs="1"') != "no") {
+            audio.SUPPORTED.push("wav");
+        } else if(a.canPlayType('audio/ogg; codecs="vorbis"') != "no") {
+            audio.SUPPORTED.push("ogg");    
+        }
+    }
+}());
+
 var __ERROR = 0.1;
 
 function getLineLineIntersection(p1, p2, p3, p4) {

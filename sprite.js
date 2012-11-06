@@ -28,6 +28,7 @@ function Sprite(model, constructor) {
 		this.width = model.width || 0;
 		this.height = model.height || 0;
 	}
+    this.swap = model.swap;
 	this.ontake = model.ontake;
 	this.type = model.type || "";
 	this.shape = model.shape || "r";
@@ -271,11 +272,25 @@ Sprite.prototype.stick = function() {
 
 Sprite.prototype.drop = function(s, b) {
 	var d = this.ondrop[s.type];
-	if(d && s.holding.length < s.limit) {
-		s.holding.push(this);
-		this.droppable = s;
-		return (b !== 0) && (b !== false) && (d.call(this, s) || 1);
-	}
+    if(d) {
+    	if(s.holding.length < s.limit) {
+    		s.holding.push(this);
+    		this.droppable = s;
+    		return (b !== 0) && (b !== false) && (d.call(this, s) || 1);
+    	} else if(b !== 0 && b !== false && s.limit > 0 && s.swap) {
+            var other_draggable = s.holding[0],
+                others_droppable = this.droppable;
+                if(other_draggable && others_droppable) {
+                    var other_ondrop = other_draggable.ondrop[others_droppable.type];
+                    if(other_ondrop) {
+                        other_draggable.take();
+                        other_draggable.drop(others_droppable);
+                        this.drop(s);
+                    }
+                }
+                
+    	}
+    }
 };
 
 Sprite.prototype.take = function() {

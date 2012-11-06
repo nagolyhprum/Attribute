@@ -58,7 +58,7 @@
             }
 			function addSprite(sprite, image) {
 				sprite.add(new Sprite({
-					image : "images/character/walkcycle/" + image + ".png",
+					image : "images/resources/walkcycle/" + image + ".png",
 					columns : 9,
 					rows : 4,
 					animations : animations
@@ -81,19 +81,62 @@
 					}
 			};
 			var c2d = new C2D("screen", function() {
-				c2d.setScreen("screen", new Sprite({
-        			width : 64,
+                var screen = new Sprite({
+                    width : 640,
+                    height : 480
+                });
+                for(var i = 0; i < 10; i++) {
+                    for(var j = 0; j < 8; j++) {
+                        screen.add(new Sprite({
+                            index : 10,
+                            location : [64 * i, 64 * j],
+                            width : 64,
+                            height : 64,
+                            image : "images/resources/environment/town.png",
+                            columns : 10,
+                            rows : 3
+                        }));
+                    }
+                }
+                screen.add(new Sprite({
+                	width : 64,
     				height : 64,
                     movement : "d",
                     keys : keys
     			}, function() {
     				this.add(new Sprite(walkcycle));
     			}));
+                function playForever() {
+                    audio("images/resources/audio/win_music", playForever, "ogg");                    
+                }
+                audio("images/resources/audio/heroism", playForever, "ogg");
+				c2d.setScreen("screen", screen);
 				c2d.start();
 			});
 		</script>
+        <style type="text/css">
+            td {
+                width : 16px;
+                height : 16px;
+                border : 1px solid black;
+                text-align : center;
+            }
+        </style>
 	</head>
 	<body>
 		<canvas id="screen">Canvas not supported.</canvas>
+        <table>
+            <tr>
+                <td></td>
+                <td>&uarr;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="left">&larr;</td>
+                <td>&darr;</td>
+                <td>&rarr;</td>
+            </tr>
+        </table>
+        Movement
 	</body>
 </html>
