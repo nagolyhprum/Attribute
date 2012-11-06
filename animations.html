@@ -5,45 +5,57 @@
 		<script type="text/javascript" src="sprite.js"></script>
 		<script type="text/javascript" src="utility.js"></script>
 		<script type="text/javascript">
-			function H(start, end, times) {
-				var r = [];
-				for(; start < end; start++) {
-					for(var i = 0; i < times; i++) {
-						r.push(start);
-					}
-				}
-				return r;
-			}
-			var times = 10, animations = {
+			var times = 5, speed = 50, animations = {
 				"up" : {
 					sequence : [0]
 				},
 				"animation-up" : {
-					sequence : H(1, 9, times),
-					next : "animation-left"
+					sequence : H(1, 9, times)
 				},
 				"left" : {
 					sequence : [9]
 				},
 				"animation-left" : {
-					sequence : H(10, 18, times),
-					next : "animation-down"
+					sequence : H(10, 18, times)
 				},
 				"down" : {
 					sequence : [18]
 				},
 				"animation-down" :  {
-					sequence : H(19, 27, times),
-					next : "animation-right"
+					sequence : H(19, 27, times)
 				},
 				"right" : {
 					sequence : [27]
 				},
 				"animation-right" :  {
-					sequence : H(28, 36, times),
-					next : "animation-up"
+					sequence : H(28, 36, times)
 				}
-			};
+			}, keys =  {
+                up : stdKey("dy", "up", -1),
+                down : stdKey("dy", "down", 1),
+                left : stdKey("dx", "left", -1),
+                right : stdKey("dx", "right", 1)
+            };
+            function stdKey(x_or_y, direction, sign) {
+               return {
+                    pressed : function() {
+                        if(!this.isMoving()) {
+                            this[x_or_y] = sign * speed;
+                            for(var i = 0; i < this.sprites[0].sprites.length; i++) {
+                                this.sprites[0].sprites[i].animate("animation-" + direction);
+                            }
+                        }
+                    },
+                    up : function() {
+                        if(this[x_or_y] * sign > 0) {
+                            this[x_or_y] = 0;
+                            for(var i = 0; i < this.sprites[0].sprites.length; i++) {
+                                this.sprites[0].sprites[i].animate(direction);
+                            }  
+                        }
+                    }
+                };
+            }
 			function addSprite(sprite, image) {
 				sprite.add(new Sprite({
 					image : "images/character/walkcycle/" + image + ".png",
@@ -51,8 +63,8 @@
 					rows : 4,
 					animations : animations
 				}, function() {
-					this.animate("animation-up");
-				}));
+                    this.animate("down");
+                }));
 			}
 			var walkcycle = {
 					width : 64,
@@ -68,14 +80,15 @@
 						addSprite(this, "WEAPON_shield_cutout_body");
 					}
 			};
-			var spriteset = new Sprite({
-				width : 64,
-				height : 64
-			}, function() {
-				this.add(new Sprite(walkcycle));
-			});
 			var c2d = new C2D("screen", function() {
-				c2d.setScreen("screen", spriteset);
+				c2d.setScreen("screen", new Sprite({
+        			width : 64,
+    				height : 64,
+                    movement : "d",
+                    keys : keys
+    			}, function() {
+    				this.add(new Sprite(walkcycle));
+    			}));
 				c2d.start();
 			});
 		</script>

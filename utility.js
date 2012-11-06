@@ -193,3 +193,13 @@ function object_is_model(obj, model) {
 	}
 	return 1;
 }
+
+function H(start, end, times) {
+	var r = [];
+	for(; start < end; start++) {
+		for(var i = 0; i < times; i++) {
+			r.push(start);
+		}
+	}
+	return r;
+}

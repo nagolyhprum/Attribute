@@ -1,5 +1,6 @@
 function Sprite(model, constructor) {
 	model = model || {};	
+    this.keys = model.keys || {};
 	this.index = model.index || 0;
 	this.sprites = [];
 	this.location = model.location ? [model.location[0] || 0, model.location[1] || 0, 1] : [0, 0, 1];
@@ -152,6 +153,12 @@ Sprite.prototype.draw = function(ctx) {
 			}
 			this.ismousein = false;
 		}
+        var keyboard = ctx.keyboard();
+        for(var i in keyboard) {
+            if(this.keys[i] && this.keys[i][keyboard[i]]) {
+                this.keys[i][keyboard[i]].call(this);
+            }
+        }
 		this.sprites.sort(function(a, b) {
 			return a.priority - b.priority;
 		});
@@ -164,15 +171,18 @@ Sprite.prototype.draw = function(ctx) {
 	return this;
 };
 
-Sprite.prototype.update = function() {
+Sprite.prototype.isMoving = function() {
+    return this.dx || this.dy;
+};
+
+Sprite.prototype.update = function(ms) {
 	if(this.movement == "d") {
 		this.r += this.dr;
-		this.location[0] += this.dx;
-		this.location[1] += this.dy;
+		this.location[0] += this.dx * (ms / 1000);
+		this.location[1] += this.dy * (ms / 1000);
 	}
 	for(var i = 0; i < this.sprites.length; i++) {				
-		var s = this.sprites[i];		
-		s.update();
+	    this.sprites[i].update(ms);
 	}
 	if(this.animation.name) {
 		var a = this.animations[this.animation.name];
