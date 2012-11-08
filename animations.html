@@ -5,37 +5,66 @@
 		<script type="text/javascript" src="sprite.js"></script>
 		<script type="text/javascript" src="utility.js"></script>
 		<script type="text/javascript">
-			var times = 5, speed = 50, animations = {
-				"up" : {
-					sequence : [0]
-				},
-				"animation-up" : {
-					sequence : H(1, 9, times)
-				},
-				"left" : {
-					sequence : [9]
-				},
-				"animation-left" : {
-					sequence : H(10, 18, times)
-				},
-				"down" : {
-					sequence : [18]
-				},
-				"animation-down" :  {
-					sequence : H(19, 27, times)
-				},
-				"right" : {
-					sequence : [27]
-				},
-				"animation-right" :  {
-					sequence : H(28, 36, times)
-				}
-			}, keys =  {
+			var times = 5, speed = 50, keys =  {
                 up : stdKey("dy", "up", -1),
                 down : stdKey("dy", "down", 1),
                 left : stdKey("dx", "left", -1),
-                right : stdKey("dx", "right", 1)
+                right : stdKey("dx", "right", 1),
+                space : {
+                    pressed : function() {
+                        if(!this.isMoving()) {
+                            this.disabled = true;
+                            this.sprites[0].visible = false;
+                            this.sprites[1].visible = true;                     
+                            var name = this.sprites[0].sprites[0].animation.name;
+                            if(name.indexOf("animation-") !== 0) {
+                                name = "animation-" + name;
+                            }
+                            for(var i = 0; i < this.sprites[0].sprites.length; i++) {
+                                this.sprites[1].sprites[i].animate(name);
+                            }  
+                        }
+                    }
+                }
             };
+            function animations(columns) {
+                return {
+        			"up" : {
+    					sequence : [0]
+    				},
+    				"animation-up" : {
+    					sequence : H(1, columns, times),
+                        next : next
+    				},
+    				"left" : {
+    					sequence : [columns]
+    				},
+    				"animation-left" : {
+    					sequence : H(columns + 1, columns * 2, times),
+                        next : next
+    				},
+    				"down" : {
+    					sequence : [columns * 2]
+    				},
+    				"animation-down" :  {
+    					sequence : H(columns * 2 + 1, columns * 3, times),
+                        next : next
+    				},
+    				"right" : {
+    					sequence : [columns * 3]
+    				},
+    				"animation-right" :  {
+    					sequence : H(columns * 3 + 1, columns * 4, times),
+                        next : next                    
+				    }
+                };
+            }
+            function next() {
+                var p = this.parent.parent;
+                p.disabled = false;
+                p.sprites[0].visible = true;
+                p.sprites[1].visible = false;
+            }
             function stdKey(x_or_y, direction, sign) {
                return {
                     pressed : function() {
@@ -56,30 +85,74 @@
                     }
                 };
             }
-			function addSprite(sprite, image) {
+			function addSprite(sprite, image, dir, columns) {
 				sprite.add(new Sprite({
-					image : "images/resources/walkcycle/" + image + ".png",
-					columns : 9,
+					image : dir + image + ".png",
+					columns : columns,
 					rows : 4,
-					animations : animations
+					animations : animations(columns),
+                    type : dir,            
 				}, function() {
                     this.animate("down");
                 }));
 			}
+            var walkcycle_dir = "images/resources/walkcycle/", slash_dir = "images/resources/slash/";
 			var walkcycle = {
 					width : 64,
 					height : 64,
 					init : function() {
-						addSprite(this, "BODY_male");
-						addSprite(this, "HEAD_plate_armor_helmet");
-						addSprite(this, "LEGS_plate_armor_pants");
-						addSprite(this, "TORSO_plate_armor_torso");
-						addSprite(this, "TORSO_plate_armor_arms_shoulders");
-						addSprite(this, "FEET_plate_armor_shoes");
-						addSprite(this, "HANDS_plate_armor_gloves");
-						addSprite(this, "WEAPON_shield_cutout_body");
+						addSprite(this, "BODY_male", walkcycle_dir, 9);
+						addSprite(this, "HEAD_plate_armor_helmet", walkcycle_dir, 9);
+						addSprite(this, "LEGS_plate_armor_pants", walkcycle_dir, 9);
+						addSprite(this, "TORSO_plate_armor_torso", walkcycle_dir, 9);
+						addSprite(this, "TORSO_plate_armor_arms_shoulders", walkcycle_dir, 9);
+						addSprite(this, "FEET_plate_armor_shoes", walkcycle_dir, 9);
+						addSprite(this, "HANDS_plate_armor_gloves", walkcycle_dir, 9);
+						addSprite(this, "WEAPON_shield_cutout_body", walkcycle_dir, 9);
 					}
 			};
+    		var slash = {
+					width : 64,
+					height : 64,
+                    visible : false,
+					init : function() {
+						addSprite(this, "BODY_human", slash_dir, 6);
+						addSprite(this, "HEAD_plate_armor_helmet", slash_dir, 6);
+						addSprite(this, "LEGS_plate_armor_pants", slash_dir, 6);
+						addSprite(this, "TORSO_plate_armor_torso", slash_dir, 6);
+						addSprite(this, "TORSO_plate_armor_arms_shoulders", slash_dir, 6);
+						addSprite(this, "FEET_plate_armor_shoes", slash_dir, 6);
+						addSprite(this, "HANDS_plate_armor_gloves", slash_dir, 6);
+						addSprite(this, "WEAPON_dagger", slash_dir, 6);
+					}
+			};
+            var item_slot = {
+                swap : true,
+                limit : 1,
+                type : "item_slot",
+                stroke : "black",
+                fill : "gray",
+                width : 32,
+                height : 32,
+                priority : 4,
+                onadd : function(p) {                  
+                    var s = new Sprite(item);
+                    s.drop(this);     
+                    p.add(this.holding[0]);
+                }
+            };            
+            var item = {
+                priority : 5,
+                width : 32,
+                height : 32,
+                ondrop : {
+                    "item_slot" : function(item_slot) {
+                        this.location = item_slot.location.slice(0);
+                        this.stick();
+                    }
+                },
+                draggable : true
+            };                    
 			var c2d = new C2D("screen", function() {
                 var screen = new Sprite({
                     width : 640,
@@ -98,6 +171,31 @@
                         }));
                     }
                 }
+                var inventory = new Sprite({
+                    width : 32 * 3 + 10 * (3 + 1),
+                    height : 32 * 7 + 10 * (7 + 1),
+                    priority : 3,
+                    fill : "gray",
+                    stroke : "black",
+                    onadd : function(p) {
+                        this.location = [this.parent.width - this.width - 1, 1, 1];
+                    }
+                });
+                var weapons = ["axe", "bigclub", "bow", "claw", "dagger", "halberd", "hammer"];
+                for(var i = 0; weapons.length;) {
+                    for(var j = 1; j < 4; i++, j++) {
+                        var c = i % 3, r = Math.floor(i / 3);
+                        inventory.add(new Sprite(item_slot, function() {
+                            this.location = [c * 32 + (c + 1) * 10, r * 32 + (r + 1) * 10, 1];
+                            var me = this;
+                            img("images/resources/weapons/icon_" + weapons[0] + j + ".png", function(i) {
+                                me.holding[0].image = i;
+                            });
+                        }));
+                    }
+                    weapons.shift();
+                }
+                screen.add(inventory);
                 screen.add(new Sprite({
                 	width : 64,
     				height : 64,
@@ -105,11 +203,12 @@
                     keys : keys
     			}, function() {
     				this.add(new Sprite(walkcycle));
+                    this.add(new Sprite(slash));
     			}));
-                function playForever() {
-                    audio("images/resources/audio/win_music", playForever, "ogg");                    
-                }
-                audio("images/resources/audio/heroism", playForever, "ogg");
+                
+                audio("images/resources/audio/win_music", function playForever() {
+                    audio("images/resources/audio/win_music", arguments.callee);                    
+                });
 				c2d.setScreen("screen", screen);
 				c2d.start();
 			});
@@ -138,5 +237,11 @@
             </tr>
         </table>
         Movement
+        <table>
+            <tr>
+                <td>SPACE</td>
+            </tr>
+        </table>        
+        Attack
 	</body>
 </html>

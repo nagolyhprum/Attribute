@@ -1,0 +1,2 @@
+Show a complete example of swapping, keyboard, mouse, and audio using animations.html
+Update demo_word_scramble.html

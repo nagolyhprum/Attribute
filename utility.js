@@ -45,8 +45,9 @@ function audio(src, callback, ext) {
         a.removeEventListener("ended", arguments.callee, false);
         callback && callback();
     });
-    a.autoplay = true;
-    a.loop = false;
+    a.addEventListener("loadeddata", function() {
+        a.play();
+    });    
     a.src = src + "." + (ext || audio.SUPPORTED[0]);
 }
 audio.CHANNELS = {};

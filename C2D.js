@@ -59,12 +59,16 @@
                     handled[key] = true;
                 } else {
                     me.livekeyboard[key] = "down";
-                }
+                }                
+                e.preventDefault && e.preventDefault();
+                return false;
             };
             cvs.onkeyup = function(e) {
                 var key = getKey(e.keyCode || e.which);
                 me.livekeyboard[key] = "up";
                 handled[key] = false;
+                e.preventDefault && e.preventDefault();
+                return false;
             };
 			cvs.innerHTML = "The &lt;CANVAS&gt; element is not supported.";
 			cvs.tabIndex = 1;
@@ -75,6 +79,7 @@
 	}
     function getKey(keycode) {
         switch(keycode) {
+            case 32 : return "space";
             case 37 : return "left";
             case 38 : return "up";
             case 39 : return "right";

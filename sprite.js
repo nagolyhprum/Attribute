@@ -51,6 +51,7 @@ function Sprite(model, constructor) {
 	this.draggable = model.draggable || false;
 	this.ondrop = model.ondrop || {};
 	this.holding = [];
+    this.disabled = model.disabled;
 	this.visible = model.visible !== false && model.visible !== 0 ? 1 : model.visible;
 	if(model.init) {
 		model.init.call(this);
@@ -110,54 +111,56 @@ Sprite.prototype.draw = function(ctx) {
 			ctx.closePath();
 		}
 		ctx.translate(-this.width / 2, -this.height / 2);
-		var mouse = ctx.mouse(), l = mouse.location;
-		if(ctx.isPointInPath(l[0], l[1])) {
-			m = inverse(ctx.getTransform())
-			l = multiply(m, mouse.location);	
-			if(!this.ismousein && this.onmousein) {
-				this.onmousein(l);
-			}
-			this.ismousein = true;
-			if(mouse.request.drag && this.onmousedrag) {
-				this.onmousedrag(l, multiply(m, mouse.lastlocation));
-			}
-			if(mouse.request.down) {
-				if(this.draggable) {
-					if(ctx.dragging && ctx.dragging.droppable) { //this guarentees that I get the top sprite
-						ctx.dragging.drop(ctx.dragging.droppable, 0); //drops the bottom sprites
-					}
-					ctx.dragging = this;
-					this.take();
-					this.oldLocation = this.location.slice(0);
-				}
-				if(this.onmousedown) {
-					this.onmousedown(l);
-				}
-				mouse.downon.push(this); //for future click event
-			} else if(mouse.request.up) {
-				if(ctx.dragging) { //should i reset the draggable if i can drop?
-					ctx.dragging.drop(this); //drop the draggable on this
-				}
-				if(this.onmouseup) {
-					this.onmouseup(l);
-				}
-				if(this.onmouseclick && mouse.downon.contains(this)) {
-					this.onmouseclick(l);
-				}
-			}
-			if(mouse.request.move && this.onmousemove) {
-				this.onmousemove(l);
-			}
-		} else if (this.ismousein) {
-			if(this.onmouseout) {
-				this.onmouseout(l);
-			}
-			this.ismousein = false;
-		}
-        var keyboard = ctx.keyboard();
-        for(var i in keyboard) {
-            if(this.keys[i] && this.keys[i][keyboard[i]]) {
-                this.keys[i][keyboard[i]].call(this);
+        if(!this.disabled) {
+    		var mouse = ctx.mouse(), l = mouse.location;
+    		if(ctx.isPointInPath(l[0], l[1])) {
+    			m = inverse(ctx.getTransform())
+    			l = multiply(m, mouse.location);	
+    			if(!this.ismousein && this.onmousein) {
+    				this.onmousein(l);
+    			}
+    			this.ismousein = true;
+    			if(mouse.request.drag && this.onmousedrag) {
+    				this.onmousedrag(l, multiply(m, mouse.lastlocation));
+    			}
+    			if(mouse.request.down) {
+    				if(this.draggable) {
+    					if(ctx.dragging && ctx.dragging.droppable) { //this guarentees that I get the top sprite
+    						ctx.dragging.drop(ctx.dragging.droppable, 0); //drops the bottom sprites
+    					}
+    					ctx.dragging = this;
+    					this.take();
+    					this.oldLocation = this.location.slice(0);
+    				}
+    				if(this.onmousedown) {
+    					this.onmousedown(l);
+    				}
+    				mouse.downon.push(this); //for future click event
+    			} else if(mouse.request.up) {
+    				if(ctx.dragging) { //should i reset the draggable if i can drop?
+    					ctx.dragging.drop(this); //drop the draggable on this
+    				}
+    				if(this.onmouseup) {
+    					this.onmouseup(l);
+    				}
+    				if(this.onmouseclick && mouse.downon.contains(this)) {
+    					this.onmouseclick(l);
+    				}
+    			}
+    			if(mouse.request.move && this.onmousemove) {
+    				this.onmousemove(l);
+    			}
+    		} else if (this.ismousein) {
+    			if(this.onmouseout) {
+    				this.onmouseout(l);
+    			}
+    			this.ismousein = false;
+    		}
+            var keyboard = ctx.keyboard();
+            for(var i in keyboard) {
+                if(this.keys[i] && this.keys[i][keyboard[i]]) {
+                    this.keys[i][keyboard[i]].call(this);
+                }
             }
         }
 		this.sprites.sort(function(a, b) {
@@ -194,7 +197,7 @@ Sprite.prototype.update = function(ms) {
 				if(typeof a.next == "string") {
 					a = this.animations[this.animation.name = a.next];
 				} else if(typeof a.next == "function") {
-					a.next(this);
+					a.next.call(this);
 				}
 			}
 		}
