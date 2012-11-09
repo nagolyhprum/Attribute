@@ -20,36 +20,48 @@
 			me.ctx = cvs.getContext("2d");
 			cvs.width = 640;
 			cvs.height = 480;
-			cvs.onblur = cvs.onmouseout = function(e) {
-				me.livemouse.downon = [];
-				me.livemouse.isdown = false;
-				me.livemouse.request.up = true;
-                me.livekeyboard = {};
+			cvs.onblur = function() {
                 handled = {};
+			};
+            cvs.onmouseout = function(e) {
+				me.livemouse.downon = [];
+                if(me.livemouse.isdown) {
+                    me.livemouse.isdown = false;
+				    me.livemouse.request.up = true;
+                }
+                me.livekeyboard = {};
 			};	
             cvs.addEventListener('touchmove', cvs.onmousemove = function(e) { 
-    			e.preventDefault(); 
-                cvs.focus();
+    			e.preventDefault();
 				if(e.touches) { 
 					e = e.touches[0]; 
 				} 
-				mousemove(e, me); 
+                if(e) {
+				    mousemove(e, me); 
+                }
 			}, false);
             cvs.addEventListener('touchend', cvs.onmouseup = function(e) { 
-    			e.preventDefault(); 
-                cvs.focus();
+    			e.preventDefault();
 				if(e.touches) { 
 					e = e.touches[0]; 
 				} 
-				mouseupdown(e, false, me); 
+                if(e) {
+				    mouseupdown(e, false, me); 
+                }
 			}, false);
             cvs.addEventListener('touchstart', cvs.onmousedown = function(e) { 
-    			e.preventDefault(); 
+        		e.preventDefault(); 
                 cvs.focus();
-				if(e.touches) { 
-					e = e.touches[0]; 
-				} 
-				mouseupdown(e, true, me); 
+                if(!me.livemouse.isdown) {
+    				if(e.touches) { 
+    					e = e.touches[0];
+    				}   
+                    if(e) {
+    				    mouseupdown(e, true, me);             
+                    }
+                } else {
+                    return false;
+                }
 			}, false);
             var handled = {};
             cvs.onkeydown = function(e) {
@@ -223,9 +235,9 @@
 			me.livemouse.request.move = true;
 		}	
 
-		function mouseupdown(e, d, me) {
-			me.livemouse.location = getMouseLocation(e);
-			me.livemouse.isdown = me.livemouse.request.down = !(me.livemouse.request.up = !d);
+		function mouseupdown(e, d, me) {                    
+    		me.livemouse.location = getMouseLocation(e);
+    		me.livemouse.isdown = me.livemouse.request.down = !(me.livemouse.request.up = !d);
 		}
 
 		C2D.prototype.start = function() {
@@ -250,7 +262,7 @@
 				me.clearRect(0, 0, me.cvs.width, me.cvs.height);                
                 me.currentTime = new Date() - me.lastTime;
                 me.lastTime = new Date();
-				me.screens[me.activeScreen].collision().update(me.currentTime).draw(me);
+				me.screens[me.activeScreen].draw(me).collision(null, me).update(me);
 				//process mouse
 				if(me.deadmouse.request.up) {
 					me.deadmouse.downon = [];
@@ -284,6 +296,10 @@
 		C2D.prototype.canvas = function() {
 			return this.cvs;
 		};
+        
+        C2D.prototype.getTimeInterval = function() {
+            return this.currentTime / 1000; //s
+        };
 		
 		C2D.prototype.context = function() {
 			return this.ctx;

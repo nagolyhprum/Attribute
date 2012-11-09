@@ -5,7 +5,26 @@
 		<script type="text/javascript" src="sprite.js"></script>
 		<script type="text/javascript" src="utility.js"></script>
 		<script type="text/javascript">
-			var times = 5, speed = 50, keys =  {
+			var times = 3, speed = 50, feet = {
+                    type : "feet",     
+                    movement : "d",
+                    onadd : function(p) {
+                        this.width = p.width / 2;
+                        this.height = p.height / 2;
+                        this.location = [this.height / 2, p.height - this.height, 1];
+                    },
+                    collidesWith : {
+                        feet : function(feet) { 
+                            var p = feet.parent, pt = this.parent;
+                            p.location[0] -= p.dx * c2d.getTimeInterval();
+                            p.location[1] -= p.dy * c2d.getTimeInterval();
+                            pt.location[0] -= pt.dx * c2d.getTimeInterval();
+                            pt.location[1] -= pt.dy * c2d.getTimeInterval();
+                            p.dx = p.dy = pt.dx = pt.dy = 0;
+                        },
+                        "" : function() {}
+                    }
+                }, keys =  {
                 up : stdKey("dy", "up", -1),
                 down : stdKey("dy", "down", 1),
                 left : stdKey("dx", "left", -1),
@@ -17,12 +36,26 @@
                             this.sprites[0].visible = false;
                             this.sprites[1].visible = true;                     
                             var name = this.sprites[0].sprites[0].animation.name;
+                            this.attack.location = this.location.slice();
+                            if(name == "up" || name == "down") {
+                                this.attack.location[0] += this.attack.width / 2;
+                            }
+                            if(name == "left" || name == "right") {
+                                this.attack.location[1] += this.attack.height / 2;                                
+                            }
+                            if(name == "right") {
+                                this.attack.location[0] += this.attack.width;
+                            }
+                            if(name == "down") {
+                                this.attack.location[1] += this.attack.height;
+                            }  
                             if(name.indexOf("animation-") !== 0) {
                                 name = "animation-" + name;
                             }
                             for(var i = 0; i < this.sprites[0].sprites.length; i++) {
                                 this.sprites[1].sprites[i].animate(name);
                             }  
+                            this.attack.visible = 1;
                         }
                     }
                 }
@@ -61,6 +94,7 @@
             }
             function next() {
                 var p = this.parent.parent;
+                p.attack.visible = 0;
                 p.disabled = false;
                 p.sprites[0].visible = true;
                 p.sprites[1].visible = false;
@@ -76,7 +110,7 @@
                         }
                     },
                     up : function() {
-                        if(this[x_or_y] * sign > 0) {
+                        if(this[x_or_y] * sign >= 0) {
                             this[x_or_y] = 0;
                             for(var i = 0; i < this.sprites[0].sprites.length; i++) {
                                 this.sprites[0].sprites[i].animate(direction);
@@ -127,7 +161,7 @@
 					}
 			};
             var item_slot = {
-                swap : true,
+                swaps : true,
                 limit : 1,
                 type : "item_slot",
                 stroke : "black",
@@ -167,11 +201,13 @@
                             height : 64,
                             image : "images/resources/environment/town.png",
                             columns : 10,
-                            rows : 3
+                            rows : 3,
+                            priority : -5
                         }));
                     }
                 }
                 var inventory = new Sprite({
+                    clips : false,
                     width : 32 * 3 + 10 * (3 + 1),
                     height : 32 * 7 + 10 * (7 + 1),
                     priority : 3,
@@ -188,8 +224,8 @@
                         inventory.add(new Sprite(item_slot, function() {
                             this.location = [c * 32 + (c + 1) * 10, r * 32 + (r + 1) * 10, 1];
                             var me = this;
-                            img("images/resources/weapons/icon_" + weapons[0] + j + ".png", function(i) {
-                                me.holding[0].image = i;
+                            img("images/resources/weapons/icon_" + weapons[0] + j + ".png", function(img) {
+                                me.holding[0].image = img;
                             });
                         }));
                     }
@@ -197,15 +233,119 @@
                 }
                 screen.add(inventory);
                 screen.add(new Sprite({
+                    image : "images/resources/combat_dummy/BODY_animation.png",
+                    rows : 1,
+                    columns : 8,
+                    animations : {
+                        spin : {
+                            sequence : H(1, 8, times),
+                            next: "stop"
+                        },
+                        stop : {
+                            sequence : [0]
+                        }
+                    },
+                    init : function() {
+                        this.add(new Sprite(feet));
+                    },
+                    location : [100, 100],
+                    type : "dummy",
+                    collidesWith : {human:function(){}}
+                }));
+                screen.add(new Sprite({
                 	width : 64,
     				height : 64,
                     movement : "d",
-                    keys : keys
+                    keys : keys,
+                    type : "human",
+                    collidesWith : {dummy : function(){}},
+                    onadd : function() {
+                        screen.add(this.attack = new Sprite({
+                            width : 32,
+                            height : 32,
+                            visible : 0,
+                            movement : "d",
+                            collidesWith : {
+                                dummy : function(dummy) {
+                                    if(dummy.animation.name != "spin") {
+                                        dummy.animate("spin");
+                                    }
+                                }
+                            }
+                        }));
+                    }
     			}, function() {
     				this.add(new Sprite(walkcycle));
                     this.add(new Sprite(slash));
+                    this.add(new Sprite(feet));
     			}));
-                
+                screen.add(new Sprite({
+                    component : "slider",
+                    stroke : "red",
+                    fill : "yellow",
+                    width : 100,
+                    height : 20,
+                    borderradius : 5,
+                    location : [100, 450],
+                    onchange : function(v, lv) {
+                        console.log([v, lv]);
+                    }
+                }));
+                screen.add(new Sprite({
+                    component : "slider",
+                    stroke : "red",
+                    fill : "yellow",
+                    width : 20,
+                    height : 100,
+                    borderradius : 5,
+                    location : [210, 370],
+                    min : -2,
+                    max : 3, 
+                    round : Math.round,
+                    onchange : function(v, lv) {
+                        console.log([v, lv]);
+                    }
+                }));
+                screen.add(new Sprite({
+                    component : "slider",
+                    stroke : "red",
+                    fill : "yellow",
+                    width : 20,
+                    height : 100,
+                    borderradius : 5,
+                    location : [240, 370],
+                    min : -50,
+                    max : 50, 
+                    round : step(10),
+                    onchange : function(v, lv) {
+                        console.log([v, lv]);
+                    }
+                }));
+                screen.add(new Sprite({
+                    width : 80,
+                    height : 40,
+                    text : {
+                        content : "Full Screen",
+                        color : "black"
+                    },
+                    hover : {
+                        stroke : "red",
+                        fill : "red"
+                    },
+                    active : {
+                        stroke : "yellow",
+                        fill : "yellow"
+                    },
+                    stroke : "blue",
+                    fill : "blue",
+                    component : "button",
+                    onmouseclick : function() {
+                        c2d.fullScreen();
+                    },
+                    onadd : function(p) {                        
+                        this.location = [10, p.height - this.height - 10, 1]
+                    }
+                }));
                 audio("images/resources/audio/win_music", function playForever() {
                     audio("images/resources/audio/win_music", arguments.callee);                    
                 });

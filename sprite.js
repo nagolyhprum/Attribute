@@ -3,6 +3,7 @@ function Sprite(model, constructor) {
     this.keys = model.keys || {};
 	this.index = model.index || 0;
 	this.sprites = [];
+    this.matrix = M();
 	this.location = model.location ? [model.location[0] || 0, model.location[1] || 0, 1] : [0, 0, 1];
 	this.r = model.r || 0;
 	this.dx = model.dx || 0;
@@ -17,19 +18,8 @@ function Sprite(model, constructor) {
 	this.columns = model.columns || 1;
 	this.borderradius = model.borderradius || 0;
 	this.animations = model.animations;
-	if(model.image) {
-		var me = this;
-		img(model.image, function(img) {
-			me.image = img;
-			me.width = me.width || model.width || me.image.width / me.columns;
-			me.height = me.height || model.height || me.image.height / me.rows;
-		});
-	} else {
-		this.width = model.width || 0;
-		this.height = model.height || 0;
-	}
-    this.swap = model.swap;
-	this.ontake = model.ontake;
+    this.swaps = model.swaps;
+    this.ontake = model.ontake;
 	this.type = model.type || "";
 	this.shape = model.shape || "r";
 	this.clips = model.clips === undefined ? true : model.clips == true;
@@ -53,18 +43,37 @@ function Sprite(model, constructor) {
 	this.holding = [];
     this.disabled = model.disabled;
 	this.visible = model.visible !== false && model.visible !== 0 ? 1 : model.visible;
-	if(model.init) {
-		model.init.call(this);
-	}
-	if(constructor) {
-		constructor.call(this);
-	}
-	this.willStick = false;
+	if(model.image) {
+		var me = this;
+		img(model.image, function(img) {
+			me.image = img;
+			me.width = me.width || model.width || me.image.width / me.columns;
+			me.height = me.height || model.height || me.image.height / me.rows;     
+            init.call(me);
+		});
+	} else {
+		this.width = model.width || 0;
+		this.height = model.height || 0;        
+        init.call(this);
+	}   
+    function init() {
+        if(model.init) {
+            model.init.call(this);
+    	}
+    	if(constructor) {
+    		constructor.call(this);
+    	}
+        if(Components[model.component]) {
+            Components[model.component].call(this, model);
+        }
+        this.willStick = false;
+    } 
 }
 
 Sprite.prototype.animate = function(name) {
 	this.animation.name = name;
 	this.animation.index = 0;
+    this.index = this.animations[name].sequence[0];
 };
 
 Sprite.prototype.draw = function(ctx) {
@@ -82,7 +91,8 @@ Sprite.prototype.draw = function(ctx) {
 			ctx.drawImage(image, 
 				sw * (this.index % this.columns),  sh * Math.floor(this.index / this.columns), sw, sh,
 				-this.width / 2, -this.height / 2, this.width, this.height);
-		} else if(this.shape == "r") {
+		}
+        if(this.shape == "r") {
 			ctx.fillStyle = this.fill;
 			ctx.strokeStyle = this.stroke;
 			ctx.roundRect(-this.width / 2, -this.height / 2, this.width, this.height, this.borderradius);	
@@ -117,11 +127,11 @@ Sprite.prototype.draw = function(ctx) {
     			m = inverse(ctx.getTransform())
     			l = multiply(m, mouse.location);	
     			if(!this.ismousein && this.onmousein) {
-    				this.onmousein(l);
+    				this.onmousein(l, mouse);
     			}
     			this.ismousein = true;
     			if(mouse.request.drag && this.onmousedrag) {
-    				this.onmousedrag(l, multiply(m, mouse.lastlocation));
+    				this.onmousedrag(l, multiply(m, mouse.lastlocation), mouse);
     			}
     			if(mouse.request.down) {
     				if(this.draggable) {
@@ -133,7 +143,7 @@ Sprite.prototype.draw = function(ctx) {
     					this.oldLocation = this.location.slice(0);
     				}
     				if(this.onmousedown) {
-    					this.onmousedown(l);
+    					this.onmousedown(l, mouse);
     				}
     				mouse.downon.push(this); //for future click event
     			} else if(mouse.request.up) {
@@ -141,18 +151,18 @@ Sprite.prototype.draw = function(ctx) {
     					ctx.dragging.drop(this); //drop the draggable on this
     				}
     				if(this.onmouseup) {
-    					this.onmouseup(l);
+    					this.onmouseup(l, mouse);
     				}
     				if(this.onmouseclick && mouse.downon.contains(this)) {
-    					this.onmouseclick(l);
+    					this.onmouseclick(l, mouse);
     				}
     			}
     			if(mouse.request.move && this.onmousemove) {
-    				this.onmousemove(l);
+    				this.onmousemove(l, mouse);
     			}
     		} else if (this.ismousein) {
     			if(this.onmouseout) {
-    				this.onmouseout(l);
+    				this.onmouseout(l, mouse);
     			}
     			this.ismousein = false;
     		}
@@ -164,7 +174,7 @@ Sprite.prototype.draw = function(ctx) {
             }
         }
 		this.sprites.sort(function(a, b) {
-			return a.priority - b.priority;
+			return a.priority - b.priority || a.location[1] - b.location[1];
 		});
 		for(var i = 0; i < this.sprites.length; i++) {		
 			var s = this.sprites[i];
@@ -179,14 +189,15 @@ Sprite.prototype.isMoving = function() {
     return this.dx || this.dy;
 };
 
-Sprite.prototype.update = function(ms) {
+Sprite.prototype.update = function(c2d) {
+    var s = c2d.getTimeInterval ? c2d.getTimeInterval() : c2d;
 	if(this.movement == "d") {
 		this.r += this.dr;
-		this.location[0] += this.dx * (ms / 1000);
-		this.location[1] += this.dy * (ms / 1000);
+		this.location[0] += this.dx * s;
+		this.location[1] += this.dy * s;
 	}
 	for(var i = 0; i < this.sprites.length; i++) {				
-	    this.sprites[i].update(ms);
+	    this.sprites[i].update(s);
 	}
 	if(this.animation.name) {
 		var a = this.animations[this.animation.name];
@@ -242,11 +253,11 @@ Sprite.prototype.getTransformedPoints = function() {
 Sprite.prototype.collision = function(sprite) {
 	var s = this.sprites;
 	for(var i = 0; i < s.length && (!sprite || !i); i++) {
-		for(var j = i + 1; j < s.length; j++) {
+		for(var j = sprite ? 0 : (i + 1); j < s.length; j++) {
 			var s1 = sprite || s[i], s2 = s[j], 
 				c1 = s1.collidesWith[s2.type] || s1.collidesWith[""], 
 				c2 = s2.collidesWith[s1.type] || s2.collidesWith[""];
-			if((s1.movement == "d" || s2.movement == "d") && (c1 || c2)) {
+			if((s1.movement == "d" || s2.movement == "d") && (c1 || c2) && (s1.visible && !s1.disabled && s2.visible && !s2.disabled)) {
 				var p1 = s1.points || s1.getTransformedPoints(), p2 = s2.points || s2.getTransformedPoints(), intersects = false;
 				for(var k = 0; !intersects && k < p1.length; k++) {
 					for(var l = 0; !intersects && l < p2.length; l++) {
@@ -255,10 +266,10 @@ Sprite.prototype.collision = function(sprite) {
 				}
 				if(intersects) {
 					if(c1) {
-						c1(s2);
+						c1.call(s1, s2);
 					}
 					if(c2) {
-						c2(s1);
+						c2.call(s2, s1);
 					}
 					s1.collision(s2);
 					s2.collision(s1);
@@ -274,35 +285,43 @@ Sprite.prototype.stick = function() {
 };
 
 Sprite.prototype.drop = function(s, b) {
-	var d = this.ondrop[s.type];
+	var d = this.ondrop[s.type] || this.ondrop[""];
     if(d) {
     	if(s.holding.length < s.limit) {
     		s.holding.push(this);
     		this.droppable = s;
-    		return (b !== 0) && (b !== false) && (d.call(this, s) || 1);
+    		(b !== 0) && (b !== false) && (d.call(this, s) || 1);
+            return 1;
     	} else if(b !== 0 && b !== false && s.limit > 0 && s.swap) {
-            var other_draggable = s.holding[0],
-                others_droppable = this.droppable;
-                if(other_draggable && others_droppable) {
-                    var other_ondrop = other_draggable.ondrop[others_droppable.type];
-                    if(other_ondrop) {
-                        other_draggable.take();
-                        other_draggable.drop(others_droppable);
-                        this.drop(s);
-                    }
-                }
-                
+            return this.swap(s.holding[0]);            
     	}
+    }
+};
+
+Sprite.prototype.swap = function(other_draggable) {
+    var others_droppable = this.droppable, 
+        this_droppable = other_draggable.droppable;
+    if(other_draggable && others_droppable) {
+        var other_ondrop = other_draggable.ondrop[others_droppable.type] || other_draggable.ondrop[""],
+            this_ondrop = this.ondrop[this_droppable.type] || this.ondrop[""];
+        if(other_ondrop && this_ondrop) {
+            other_draggable.take();
+            this.take();
+            other_draggable.drop(others_droppable);
+            this.drop(this_droppable);
+            return 1;
+        }
     }
 };
 
 Sprite.prototype.take = function() {
 	this.willStick = false;
-	if(this.droppable) {
-		this.droppable.holding.remove(this);
-		if(this.droppable.ontake) {
-			this.droppable.ontake.call(this.droppable, this);
-		}
+	if(this.droppable && this.droppable.holding.remove(this)) {
+        var func;
+		if(this.droppable.ontake && (func = this.droppable.ontake[this.type] || this.droppable.ontake[""])) {
+			func.call(this.droppable, this);
+		}   		
+        return 1;
 	}
 };
 
@@ -323,4 +342,90 @@ Sprite.prototype.find = function(model, r) {
 	}
 	
 	return r;
+};
+
+var Components = { priority : 50 };
+Components.slider = function(model) {
+    this.priority = Components.priority;
+    this.onadd = function(p) {
+        this.width = p.width;
+        this.height = p.height;
+    };
+    this.location = [0, 0, 1];
+    this.fill = this.stroke = "rgba(0, 0, 0, 0)";
+    var bar, slider, 
+        position_range = Math.max(model.width, model.height) - Math.min(model.width, model.height),
+        user_range = model.max - model.min;
+    this.onmousedrag = function(l1, l2, mouse) {
+        if(mouse.downon.contains(bar)) {
+            var offset, last_offset, x = 0, y = 0;
+            if(bar.width > bar.height) { //orientation = horizontal
+                last_offset = Math.min(Math.max(l2[0] - bar.location[0] - slider.width / 2, 0), bar.width - slider.width);
+                offset = x = Math.min(Math.max(l1[0] - bar.location[0] - slider.width / 2, 0), bar.width - slider.width);
+            } else {
+                last_offset = Math.min(Math.max(l2[1] - bar.location[1] - slider.height / 2, 0), bar.height - slider.height);
+                offset = y = Math.min(Math.max(l1[1] - bar.location[1] - slider.height / 2, 0), bar.height - slider.height);
+            }
+            var value = (user_range || 1) * offset / position_range,
+                old_value = (user_range || 1) * last_offset / position_range;
+            if(model.round) {
+                value = model.round(value, user_range);
+                old_value = model.round(old_value, user_range);
+                if(x != 0) {
+                    x = (value / user_range) * position_range;
+                } else {
+                    y = (value / user_range) * position_range;
+                }
+            }
+            if(model.onchange && (value != old_value)) {                                
+                model.onchange((model.min || 0) + value, (model.min || 0) + old_value);
+            }
+            slider.location = [x, y, 1];
+        }
+    };
+    this.add(bar = new Sprite({
+        location : model.location,
+        stroke : model.stroke,
+        fill : model.fill,
+        width : model.width,
+        height : model.height,
+        borderradius : model.borderradius,
+        onadd : function(p) {
+            var size = Math.min(model.width, model.height);
+            this.add(slider = new Sprite({
+                borderradius : model.borderradius,
+                stroke : model.stroke,
+                fill : model.fill,
+                width : size,
+                height : size                
+            }));
+        }
+    }));
+};
+
+Components.button = function(model) {
+    this.priority = Components.priority;
+    this.text = "";
+    this.add(new Sprite({
+        text : model.text.content,
+        fill : model.text.color,
+        stroke : model.text.color
+    }));
+    this.onmousein = function(l, mouse) {
+        if(mouse.downon.contains(this)) {
+            this.fill = model.active.fill;
+            this.stroke = model.active.stroke;
+        } else {
+            this.fill = model.hover.fill;
+            this.stroke = model.hover.stroke;
+        }
+    };
+    this.onmouseout = function() {
+        this.fill = model.fill;
+        this.stroke = model.stroke;        
+    };
+    this.onmousedown = function() {
+        this.fill = model.active.fill;
+        this.stroke = model.active.stroke;
+    };
 };

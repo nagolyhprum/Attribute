@@ -127,7 +127,10 @@ Array.prototype.swap = function(i, j) {
 };
 
 Array.prototype.remove = Array.prototype.remove || function(e) {
-	return this.splice(this.indexOf(e), 1)[0];
+    var index = this.indexOf(e);
+    if(index != -1) {
+	    return this.splice(index, 1)[0];
+    }
 };
 
 Array.prototype.contains = Array.prototype.contains || function(e) {
@@ -144,7 +147,7 @@ Array.prototype.indexOf = Array.prototype.indexOf || function(e) {
 };
 
 function getMouseLocation(e) {
-	var el = e.currentTarget, xratio = el.width / el.clientWidth, yratio = el.height / el.clientHeight;	
+	var el = e.currentTarget || e.target, xratio = el.width / el.clientWidth, yratio = el.height / el.clientHeight;	
 	var x = e.pageX - el.offsetLeft;
 	var y = e.pageY - el.offsetTop;	
 	return [x * xratio, y * yratio, 1];
@@ -245,4 +248,10 @@ function H(start, end, times) {
 		}
 	}
 	return r;
+}
+
+function step(number) {
+    return function(value, range) {
+        return Math.round(value / number) * number;
+    };
 }

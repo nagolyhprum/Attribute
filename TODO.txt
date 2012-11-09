@@ -1,2 +1,3 @@
-Show a complete example of swapping, keyboard, mouse, and audio using animations.html
+User can opt out of take, drop and swap by returning false
+Detect swap event
 Update demo_word_scramble.html

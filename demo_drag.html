@@ -21,6 +21,7 @@
 				borderradius : 5,
 				draggable : true,
                 priority : z_index,
+                type : "draggable",
 				ondrop : {
 					droppable : function(s) {
 						this.stick();
@@ -37,9 +38,11 @@
 				borderradius : 5,
 				stroke : "green",
 				limit : 2,
-                swap : true,
-				ontake : function(taken) {
-					this.sprites[0].text = this.holding.length + " / " + this.limit;
+                swaps : true,
+				ontake : {
+                    draggable : function(taken) {
+					        this.sprites[0].text = this.holding.length + " / " + this.limit;
+				    }
 				},
 				init : function() {
 					this.add(new Sprite({
