@@ -148,9 +148,8 @@ Array.prototype.indexOf = Array.prototype.indexOf || function(e) {
 
 function getMouseLocation(e) {
 	var el = e.currentTarget || e.target, xratio = el.width / el.clientWidth, yratio = el.height / el.clientHeight;	
-	var x = e.pageX - el.offsetLeft;
-	var y = e.pageY - el.offsetTop;	
-	return [x * xratio, y * yratio, 1];
+    var bb = el.getBoundingClientRect();
+	return [(e.pageX - bb.left) * xratio, (e.pageY - bb.top) * yratio, 1];
 }
 
 //MATRIX
@@ -254,4 +253,34 @@ function step(number) {
     return function(value, range) {
         return Math.round(value / number) * number;
     };
+}
+
+function DEBUG(id, value) {
+    var debug = document.getElementById("debug"), div = document.getElementById(id);;
+    if(!debug) {        
+        var main = document.createElement("div");
+        for(;document.body.children.length > 0;) {
+            var c = document.body.children[0];
+            document.body.removeChild(c);
+            main.appendChild(c);
+        }
+        document.body.appendChild(main);
+        debug = document.createElement("div");
+        debug.id = "debug";
+        main.style.position = debug.style.position = "fixed";
+        main.style.top = debug.style.bottom = debug.style.left = "0px";
+        debug.style.backgroundColor = "white";
+        debug.style.border = "1px solid black";
+        main.style.width = debug.style.width = "100%";
+        debug.style.height = "25%";
+        main.style.height = "75%";
+        main.style.overflow = debug.style.overflow = "auto";
+        document.body.appendChild(debug);
+    }
+    if(!div) {
+        div = document.createElement("div");
+        div.id = id;
+        debug.appendChild(div);
+    }
+    div.innerHTML = id + " : " + value;
 }

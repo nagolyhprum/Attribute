@@ -11,6 +11,7 @@ function Sprite(model, constructor) {
 	this.dr = model.dr || 0;
 	this.sx = model.sx || 1;
 	this.sy = model.sy || 1;
+    this.textHandler = model.textHandler;
 	this.animation = {};
 	this.limit = model.limit || (1 / 0);
 	this.rows = model.rows || 1;
@@ -25,6 +26,8 @@ function Sprite(model, constructor) {
 	this.clips = model.clips === undefined ? true : model.clips == true;
 	this.fill = model.fill || "rgba(0,0,0,0)";
 	this.stroke = model.stroke || "rgba(0,0,0,0)";
+    this.hover = model.hover;
+    this.active = model.active;
 	this.onmouseclick = model.onmouseclick;
 	this.onmousedrag = model.onmousedrag;
 	this.onmousedown = model.onmousedown;
@@ -40,7 +43,11 @@ function Sprite(model, constructor) {
 	this.onadd = model.onadd; //when i am added to something
 	this.draggable = model.draggable || false;
 	this.ondrop = model.ondrop || {};
+    this.min = model.min;
+    this.max = model.max;
+    this.round = model.round;
 	this.holding = [];
+    this.onchange = model.onchange;
     this.disabled = model.disabled;
 	this.visible = model.visible !== false && model.visible !== 0 ? 1 : model.visible;
 	if(model.image) {
@@ -63,8 +70,8 @@ function Sprite(model, constructor) {
     	if(constructor) {
     		constructor.call(this);
     	}
-        if(Components[model.component]) {
-            Components[model.component].call(this, model);
+        if(COMPONENTS[model.component]) {
+            COMPONENTS[model.component].call(this, model);
         }
         this.willStick = false;
     } 
@@ -98,21 +105,25 @@ Sprite.prototype.draw = function(ctx) {
 			ctx.roundRect(-this.width / 2, -this.height / 2, this.width, this.height, this.borderradius);	
 		}
 		if(this.text) {
-			ctx.font = this.font;
-			ctx.textBaseline = "middle";
-			ctx.textAlign = "center";
-			ctx.fillStyle = this.fill;
-			ctx.strokeStyle = this.stroke;		
-			var cx = 0, cy = 0, p = this.parent;
-			if(p) {
-				cx = p.width / 2;
-				cy = p.height / 2;
-			} else {
-				cx = ctx.canvas.width / 2;
-				cy = ctx.canvas.height / 2;
-			}
-			ctx.strokeText(this.text, -this.width / 2 + cx, -this.height / 2 + cy, cx * 2);
-			ctx.fillText(this.text, -this.width / 2 + cx, -this.height / 2 + cy, cx * 2);
+            if(this.textHandler) {
+                this.textHandler(ctx);
+            } else {         
+        		ctx.font = this.font;
+        		ctx.textBaseline = "middle";
+        		ctx.textAlign = "center";
+        		ctx.fillStyle = this.fill;
+        		ctx.strokeStyle = this.stroke;		
+        		var cx = 0, cy = 0, p = this.parent;
+        		if(p) {
+        			cx = p.width / 2;
+        			cy = p.height / 2;
+        		} else {
+        			cx = ctx.canvas.width / 2;
+        			cy = ctx.canvas.height / 2;
+        		}
+        		ctx.strokeText(this.text, -this.width / 2 + cx, -this.height / 2 + cy, cx * 2);
+        		ctx.fillText(this.text, -this.width / 2 + cx, -this.height / 2 + cy, cx * 2);
+            }
 		}
 		if(this.clips) {
 			ctx.beginPath();
@@ -168,8 +179,8 @@ Sprite.prototype.draw = function(ctx) {
     		}
             var keyboard = ctx.keyboard();
             for(var i in keyboard) {
-                if(this.keys[i] && this.keys[i][keyboard[i]]) {
-                    this.keys[i][keyboard[i]].call(this);
+                if(!this.disabled && this.keys[i] && this.keys[i][keyboard[i]]) {
+                    this.keys[i][keyboard[i]].call(this, i);
                 }
             }
         }
@@ -344,18 +355,35 @@ Sprite.prototype.find = function(model, r) {
 	return r;
 };
 
-var Components = { priority : 50 };
-Components.slider = function(model) {
-    this.priority = Components.priority;
+var COMPONENTS = { 
+    priority : 50,
+    hover : {
+        fill : "lightgray",
+        stroke : "black"        
+    },
+    active : {
+        fill : "white",
+        stroke : "black"        
+    },
+    fill : "gray",
+    stroke : "black",
+    text : {
+        color : "black"
+    },
+    borderradius : 5
+};
+COMPONENTS.slider = function() {
+    this.priority = COMPONENTS.priority;
+    var stroke = this.stroke != "rgba(0,0,0,0)" ? this.stroke : COMPONENTS.stroke, 
+        fill = this.fill != "rgba(0,0,0,0)" ? this.fill : COMPONENTS.fill;
     this.onadd = function(p) {
         this.width = p.width;
         this.height = p.height;
     };
-    this.location = [0, 0, 1];
     this.fill = this.stroke = "rgba(0, 0, 0, 0)";
     var bar, slider, 
-        position_range = Math.max(model.width, model.height) - Math.min(model.width, model.height),
-        user_range = model.max - model.min;
+        position_range = Math.max(this.width, this.height) - Math.min(this.width, this.height),
+        user_range = this.max - this.min;
     this.onmousedrag = function(l1, l2, mouse) {
         if(mouse.downon.contains(bar)) {
             var offset, last_offset, x = 0, y = 0;
@@ -368,64 +396,194 @@ Components.slider = function(model) {
             }
             var value = (user_range || 1) * offset / position_range,
                 old_value = (user_range || 1) * last_offset / position_range;
-            if(model.round) {
-                value = model.round(value, user_range);
-                old_value = model.round(old_value, user_range);
+            if(this.round) {
+                value = this.round(value, user_range);
+                old_value = this.round(old_value, user_range);
                 if(x != 0) {
                     x = (value / user_range) * position_range;
                 } else {
                     y = (value / user_range) * position_range;
                 }
             }
-            if(model.onchange && (value != old_value)) {                                
-                model.onchange((model.min || 0) + value, (model.min || 0) + old_value);
+            if(this.onchange && (value != old_value)) {                                
+                this.onchange((this.min || 0) + value, (this.min || 0) + old_value);
             }
             slider.location = [x, y, 1];
         }
     };
+    var me = this;
     this.add(bar = new Sprite({
-        location : model.location,
-        stroke : model.stroke,
-        fill : model.fill,
-        width : model.width,
-        height : model.height,
-        borderradius : model.borderradius,
+        location : this.location,
+        stroke : stroke,
+        fill : fill,
+        width : this.width,
+        height : this.height,
+        borderradius : this.borderradius || COMPONENTS.borderradius,
         onadd : function(p) {
-            var size = Math.min(model.width, model.height);
+            var size = Math.min(this.width, this.height);
             this.add(slider = new Sprite({
-                borderradius : model.borderradius,
-                stroke : model.stroke,
-                fill : model.fill,
+                borderradius : this.borderradius || COMPONENTS.borderradius,
+                stroke : this.stroke,
+                fill : this.fill,
                 width : size,
-                height : size                
+                height : size,
+                onmousein : function(l, mouse) {
+                    if(mouse.downon.contains(this)) {
+                        this.fill = (me.active || COMPONENTS.active).fill;
+                        this.stroke = (me.active || COMPONENTS.active).stroke;
+                    } else {
+                        this.fill = (me.hover || COMPONENTS.hover).fill;
+                        this.stroke = (me.hover || COMPONENTS.hover).stroke;
+                    }
+                },
+                onmouseout : function() {
+                    this.fill = fill;
+                    this.stroke = stroke;        
+                },
+                onmousedown : function() {
+                    this.fill = (me.active || COMPONENTS.active).fill;
+                    this.stroke = (me.active || COMPONENTS.active).stroke;
+                }            
             }));
         }
     }));
+    this.location = [0, 0, 1];
 };
 
-Components.button = function(model) {
-    this.priority = Components.priority;
-    this.text = "";
+COMPONENTS.button = function() {
+    this.priority = COMPONENTS.priority; 
+    this.borderradius = this.borderradius || COMPONENTS.borderradius;   
+    var stroke = this.stroke != "rgba(0,0,0,0)" ? this.stroke : COMPONENTS.stroke, 
+        fill = this.fill != "rgba(0,0,0,0)" ? this.fill : COMPONENTS.fill,
+        color = this.text.color || COMPONENTS.text.color;
+    this.fill = fill;
+    this.stroke = stroke;
     this.add(new Sprite({
-        text : model.text.content,
-        fill : model.text.color,
-        stroke : model.text.color
+        text : this.text.content,
+        fill : color,
+        stroke : color
     }));
+    this.text = ""; 
     this.onmousein = function(l, mouse) {
         if(mouse.downon.contains(this)) {
-            this.fill = model.active.fill;
-            this.stroke = model.active.stroke;
+            this.fill = (this.active || COMPONENTS.active).fill;
+            this.stroke = (this.active || COMPONENTS.active).stroke;
         } else {
-            this.fill = model.hover.fill;
-            this.stroke = model.hover.stroke;
+            this.fill = (this.hover || COMPONENTS.hover).fill;
+            this.stroke = (this.hover || COMPONENTS.hover).stroke;
         }
     };
     this.onmouseout = function() {
-        this.fill = model.fill;
-        this.stroke = model.stroke;        
+        this.fill = fill;
+        this.stroke = stroke;        
     };
     this.onmousedown = function() {
-        this.fill = model.active.fill;
-        this.stroke = model.active.stroke;
+        this.fill = (this.active || COMPONENTS.active).fill;
+        this.stroke = (this.active || COMPONENTS.active).stroke;
+    };
+};
+
+var FONT = {
+    style : "",
+    weight : "",
+    size : 12,
+    family : '"Times New Roman", serif',
+    color : "black"
+};
+COMPONENTS.textbox = function() {
+    this.priority = COMPONENTS.priority;
+    var stroke = this.stroke != "rgba(0,0,0,0)" ? this.stroke : COMPONENTS.stroke, 
+        fill = this.fill != "rgba(0,0,0,0)" ? this.fill : COMPONENTS.fill;
+    this.stroke = stroke;
+    this.fill = fill;    
+    var text, width, heights;
+    //style = normal, italic, oblique
+    //weight - normal, bolder, 100 - 900, bold...
+    //family - "Times New Roman",Georgia,Serif
+    //size - 24px, 2em, 100%
+    //color - red, #001122, rgb(0, 126, 255)
+    //italic bold 12px/30px Georgia, serif
+    this.textHandler = function(ctx) {
+        if(text != this.text || width != this.width) {            
+            text = this.text;
+            width = this.width;
+            //separate any newlines
+            var roomLeft = width;
+            for(var i = 0; i < text.length; i++) {                
+                var t = text[i];
+                if(t.content) {    
+                    t.size = t.size || FONT.size;
+                    if(!t.font) {
+                        t.font = [
+                            t.style || FONT.style, 
+                            t.weight || FONT.weight, 
+                            (t.size || FONT.size) + "px", 
+                            t.family || FONT.family                            
+                        ].join(" ");
+                    }
+                    var io = t.content.indexOf("\n");                
+                    if(io != -1) {
+                        text.splice(i + 1, 0, "\n", {
+                            font : t.font,
+                            color : t.color,
+                            content : t.content.substring(io + 1)
+                        });                    
+                        t.content = t.content.substring(0, io);
+                    }  
+                    ctx.font = t.font;
+                    t.width = ctx.measureText(t.content).width;
+                    //decompose
+                    console.log([t.content, t.font, t.width, t.color || FONT.color]);
+                    roomLeft -= t.width;
+                    if(roomLeft <= 0) {
+                        var nextLine = "", removed = 0, io = t.content.lastIndexOf(" ");
+                        if(io == -1) {
+                            text.splice(i, 0, "\n");
+                            roomLeft = width;
+                        } else {
+                            while(roomLeft + removed < 0 && io != -1) {                                                        
+                                nextLine = t.content.substring(io + 1) + nextLine;
+                                t.content = t.content.substring(0, io + 1);
+                                removed = ctx.measureText(nextLine).width;
+                                io = t.content.lastIndexOf(" ");
+                            }
+                            text.splice(i + 1, 0, "\n", {
+                                content : nextLine,
+                                font : t.font,
+                                color : t.color
+                            });
+                        }
+                    }
+                } else if(t == "\n") {
+                    roomLeft = width;                    
+                }
+            }
+            heights = [];
+            var j = 0;
+            for(i = 0; i < text.length; i++) {
+                if(text[i].content && (text[i].size > heights[j] || !heights[j])) {
+                    heights[j] = text[i].size;
+                } else if(text[i] == "\n") {
+                    j++;
+                }
+            }
+        }
+        var line = 0, x = 0, y = heights[line++];
+    	ctx.textBaseline = "bottom";
+		ctx.textAlign = "left";
+        for(var i = 0; i < text.length; i++) {
+            var t = text[i];
+            if(t.content) {
+                ctx.font = t.font;
+                ctx.fillStyle = t.color || FONT.color;
+                ctx.strokeStyle = t.color || FONT.color;
+                ctx.strokeText(t.content, -this.width / 2 + x, -this.height / 2 + y - (heights[line - 1] - t.size)/4, this.width);
+                ctx.fillText(t.content, -this.width / 2 + x, -this.height / 2 + y - (heights[line - 1] - t.size)/4, this.width);
+                x += t.width;
+            } else if(t == "\n") {
+                x = 0;
+                y += heights[line++];
+            }
+        }
     };
 };

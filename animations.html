@@ -8,10 +8,11 @@
 			var times = 3, speed = 50, feet = {
                     type : "feet",     
                     movement : "d",
+                    stroke : "blue",
                     onadd : function(p) {
                         this.width = p.width / 2;
                         this.height = p.height / 2;
-                        this.location = [this.height / 2, p.height - this.height, 1];
+                        this.location = [this.width / 2, p.height - this.height, 1];
                     },
                     collidesWith : {
                         feet : function(feet) { 
@@ -30,7 +31,7 @@
                 left : stdKey("dx", "left", -1),
                 right : stdKey("dx", "right", 1),
                 space : {
-                    pressed : function() {
+                    press : function() {
                         if(!this.isMoving()) {
                             this.disabled = true;
                             this.sprites[0].visible = false;
@@ -101,20 +102,24 @@
             }
             function stdKey(x_or_y, direction, sign) {
                return {
-                    pressed : function() {
-                        if(!this.isMoving()) {
-                            this[x_or_y] = sign * speed;
+                    press : function() {
+                        this.keys[direction].down.call(this, direction);
+                    },
+                    down : function() {
+                        if(this.sprites[0].sprites[0].animation.name.indexOf("animation-") != 0) {
+                            this[x_or_y] += sign * speed;
                             for(var i = 0; i < this.sprites[0].sprites.length; i++) {
                                 this.sprites[0].sprites[i].animate("animation-" + direction);
                             }
                         }
                     },
                     up : function() {
-                        if(this[x_or_y] * sign >= 0) {
-                            this[x_or_y] = 0;
+                        var name = this.sprites[0].sprites[0].animation.name;
+                        if(name.indexOf(direction) != -1) {
+                            this[x_or_y] = 0;                    
                             for(var i = 0; i < this.sprites[0].sprites.length; i++) {
                                 this.sprites[0].sprites[i].animate(direction);
-                            }  
+                            }
                         }
                     }
                 };
@@ -169,13 +174,13 @@
                 width : 32,
                 height : 32,
                 priority : 4,
-                onadd : function(p) {                  
-                    var s = new Sprite(item);
+                onadd : function(p) {      
+                    var s = new Sprite(item);  
                     s.drop(this);     
-                    p.add(this.holding[0]);
+                    p.add(s);
                 }
-            };            
-            var item = {
+            };      
+            var weapons = ["axe", "bigclub", "bow", "claw", "dagger", "halberd", "hammer"], index = 0, item = {
                 priority : 5,
                 width : 32,
                 height : 32,
@@ -183,6 +188,16 @@
                     "item_slot" : function(item_slot) {
                         this.location = item_slot.location.slice(0);
                         this.stick();
+                    }
+                },
+                init : function() {
+                    var me = this;
+                    index++;
+                    img("images/resources/weapons/icon_" + weapons[0] + index + ".png", function(img) {
+                        me.image = img;
+                    });
+                    if((index = index % 3) == 0) {
+                        weapons.shift();
                     }
                 },
                 draggable : true
@@ -217,19 +232,13 @@
                         this.location = [this.parent.width - this.width - 1, 1, 1];
                     }
                 });
-                var weapons = ["axe", "bigclub", "bow", "claw", "dagger", "halberd", "hammer"];
                 for(var i = 0; weapons.length;) {
                     for(var j = 1; j < 4; i++, j++) {
                         var c = i % 3, r = Math.floor(i / 3);
                         inventory.add(new Sprite(item_slot, function() {
                             this.location = [c * 32 + (c + 1) * 10, r * 32 + (r + 1) * 10, 1];
-                            var me = this;
-                            img("images/resources/weapons/icon_" + weapons[0] + j + ".png", function(img) {
-                                me.holding[0].image = img;
-                            });
                         }));
                     }
-                    weapons.shift();
                 }
                 screen.add(inventory);
                 screen.add(new Sprite({
@@ -241,13 +250,10 @@
                             sequence : H(1, 8, times),
                             next: "stop"
                         },
-                        stop : {
-                            sequence : [0]
-                        }
+                        stop : { sequence : [0] }
                     },
-                    init : function() {
-                        this.add(new Sprite(feet));
-                    },
+                    init : function() { this.add(new Sprite(feet)); },
+                    stroke : "blue",
                     location : [100, 100],
                     type : "dummy",
                     collidesWith : {human:function(){}}
@@ -258,6 +264,7 @@
                     movement : "d",
                     keys : keys,
                     type : "human",
+                    stroke : "blue",
                     collidesWith : {dummy : function(){}},
                     onadd : function() {
                         screen.add(this.attack = new Sprite({
@@ -265,11 +272,10 @@
                             height : 32,
                             visible : 0,
                             movement : "d",
+                            stroke : "red",
                             collidesWith : {
                                 dummy : function(dummy) {
-                                    if(dummy.animation.name != "spin") {
-                                        dummy.animate("spin");
-                                    }
+                                    if(dummy.animation.name != "spin") { dummy.animate("spin"); }
                                 }
                             }
                         }));
@@ -279,72 +285,84 @@
                     this.add(new Sprite(slash));
                     this.add(new Sprite(feet));
     			}));
-                screen.add(new Sprite({
+                var slider = {
                     component : "slider",
-                    stroke : "red",
-                    fill : "yellow",
-                    width : 100,
-                    height : 20,
-                    borderradius : 5,
-                    location : [100, 450],
                     onchange : function(v, lv) {
-                        console.log([v, lv]);
-                    }
+                        DEBUG(this.id, ["New Value : ", v, ", Old Value : ", lv].join(""));
+                    },
+                    init : function() { this.id = id++; }
+                }, id = 1;
+                screen.add(new Sprite(slider, function() {
+                    this.location = [100, 450];
+                    this.width = 100;
+                    this.height = 20;  
+                }));
+                screen.add(new Sprite(slider, function() {
+                    this.width = 20;
+                    this.height = 100;
+                    this.location = [210, 370];
+                    this.min = -2;
+                    this.max = 3;      
+                    this.round = Math.round;
+                }));
+                screen.add(new Sprite(slider, function() {
+                    this.width = 20;
+                    this.height = 100;
+                    this.location = [240, 370];
+                    this.min = -50;
+                    this.max = 50;
+                    this.round = step(10);
                 }));
                 screen.add(new Sprite({
-                    component : "slider",
-                    stroke : "red",
-                    fill : "yellow",
-                    width : 20,
+                    text : [
+                        {
+                            content : "Hello World\nI am demonstrating a textbox right now.",
+                        },
+                        "\n",
+                        {
+                            content : "Look I can change "                            
+                        },
+                        {
+                            content : "style ",
+                            style : "italic"
+                        },
+                        {
+                            content : "weight ",
+                            weight : "bold "
+                        },
+                        {
+                            content : "color ",
+                            color : "red"
+                        },
+                        {
+                            content : "family",
+                            family : '"Courier New"'
+                        },
+                        {
+                            content : " and "
+                        },
+                        {
+                            content : "size",
+                            size : 24
+                        },
+                        {
+                            content : "size",
+                            size : 48
+                        }
+                        
+                    ],
+                    width : 200,
                     height : 100,
-                    borderradius : 5,
-                    location : [210, 370],
-                    min : -2,
-                    max : 3, 
-                    round : Math.round,
-                    onchange : function(v, lv) {
-                        console.log([v, lv]);
-                    }
-                }));
-                screen.add(new Sprite({
-                    component : "slider",
-                    stroke : "red",
-                    fill : "yellow",
-                    width : 20,
-                    height : 100,
-                    borderradius : 5,
-                    location : [240, 370],
-                    min : -50,
-                    max : 50, 
-                    round : step(10),
-                    onchange : function(v, lv) {
-                        console.log([v, lv]);
-                    }
+                    location : [400, 350],
+                    component : "textbox"
                 }));
                 screen.add(new Sprite({
                     width : 80,
                     height : 40,
-                    text : {
-                        content : "Full Screen",
-                        color : "black"
-                    },
-                    hover : {
-                        stroke : "red",
-                        fill : "red"
-                    },
-                    active : {
-                        stroke : "yellow",
-                        fill : "yellow"
-                    },
-                    stroke : "blue",
-                    fill : "blue",
+                    text : { content : "Full Screen" },
                     component : "button",
-                    onmouseclick : function() {
-                        c2d.fullScreen();
-                    },
-                    onadd : function(p) {                        
-                        this.location = [10, p.height - this.height - 10, 1]
-                    }
+                    onmouseclick : function() { c2d.fullScreen(); },
+                    onadd : function(p) { this.location = [10, p.height - this.height - 10, 1]; }
                 }));
                 audio("images/resources/audio/win_music", function playForever() {
                     audio("images/resources/audio/win_music", arguments.callee);                    

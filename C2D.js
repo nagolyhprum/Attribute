@@ -32,7 +32,7 @@
                 me.livekeyboard = {};
 			};	
             cvs.addEventListener('touchmove', cvs.onmousemove = function(e) { 
-    			e.preventDefault();
+        	    e.preventDefault();
 				if(e.touches) { 
 					e = e.touches[0]; 
 				} 
@@ -41,7 +41,7 @@
                 }
 			}, false);
             cvs.addEventListener('touchend', cvs.onmouseup = function(e) { 
-    			e.preventDefault();
+        	    e.preventDefault();
 				if(e.touches) { 
 					e = e.touches[0]; 
 				} 
@@ -50,7 +50,7 @@
                 }
 			}, false);
             cvs.addEventListener('touchstart', cvs.onmousedown = function(e) { 
-        		e.preventDefault(); 
+                e.preventDefault(); 
                 cvs.focus();
                 if(!me.livemouse.isdown) {
     				if(e.touches) { 
@@ -59,15 +59,13 @@
                     if(e) {
     				    mouseupdown(e, true, me);             
                     }
-                } else {
-                    return false;
                 }
 			}, false);
             var handled = {};
             cvs.onkeydown = function(e) {
                 var key = getKey(e.keyCode || e.which);
                 if(!handled[key]) {
-                    me.livekeyboard[key] = "pressed";
+                    me.livekeyboard[key] = "press";
                     handled[key] = true;
                 } else {
                     me.livekeyboard[key] = "down";
@@ -104,6 +102,7 @@
 			this.ctx.strokeStyle = this.strokeStyle;
 			this.ctx.textBaseline = this.textBaseline;
 			this.ctx.textAlign = this.textAlign;
+            this.ctx.font = this.font;
 			this.ctx.strokeText(t, x, y, w);
 		};
 		
@@ -111,6 +110,7 @@
 			this.ctx.fillStyle = this.fillStyle;
 			this.ctx.textBaseline = this.textBaseline;
 			this.ctx.textAlign = this.textAlign;
+            this.ctx.font = this.font;
 			this.ctx.fillText(t, x, y, w);
 		};
 	
@@ -185,8 +185,8 @@
 
 		C2D.prototype.fullScreen = function() {
 			var s = this.cvs.style;
-			if(s.position != "fixed") {
-				s.position = "fixed";
+			if(s.position != "absolute") {
+				s.position = "absolute";
 				s.top = s.left = 0;
 				s.width = s.height = "100%";
 			} else {
@@ -257,6 +257,10 @@
 					lastlocation : (me.livemouse.lastlocation || [0, 0, 1]).slice(0)
 				};
                 me.deadkeyboard = me.livekeyboard;
+                var kb = "";
+                for(var i in me.deadkeyboard) {
+                    kb += i + " : " + me.deadkeyboard[i] + "<br/>";
+                }
                 me.livekeyboard = {};
 				//process drawing
 				me.clearRect(0, 0, me.cvs.width, me.cvs.height);                
@@ -310,6 +314,10 @@
 		C2D.prototype.find = function(model) {
 			return this.screens[this.activeScreen].find(model, []);
 		};
+        C2D.prototype.measureText = function(text) {            
+            this.ctx.font = this.font;
+            return this.ctx.measureText(text);
+        };
 	} else {
 		C2D.prototype.isSupported = false;
 	}	
