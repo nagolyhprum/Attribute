@@ -70,8 +70,8 @@ function Sprite(model, constructor) {
     	if(constructor) {
     		constructor.call(this);
     	}
-        if(COMPONENTS[model.component]) {
-            COMPONENTS[model.component].call(this, model);
+        if(COMPONENTS[this.component = model.component]) {
+            COMPONENTS[this.component].call(this, model);
         }
         this.willStick = false;
     } 
@@ -125,7 +125,7 @@ Sprite.prototype.draw = function(ctx) {
         		ctx.fillText(this.text, -this.width / 2 + cx, -this.height / 2 + cy, cx * 2);
             }
 		}
-		if(this.clips) {
+        if(this.clips) {
 			ctx.beginPath();
 			ctx.rect(-this.width / 2, -this.height / 2, this.width, this.height);
 			ctx.clip();
@@ -496,22 +496,27 @@ COMPONENTS.textbox = function() {
         fill = this.fill != "rgba(0,0,0,0)" ? this.fill : COMPONENTS.fill;
     this.stroke = stroke;
     this.fill = fill;    
-    var text, width, heights;
-    //style = normal, italic, oblique
-    //weight - normal, bolder, 100 - 900, bold...
-    //family - "Times New Roman",Georgia,Serif
-    //size - 24px, 2em, 100%
-    //color - red, #001122, rgb(0, 126, 255)
-    //italic bold 12px/30px Georgia, serif
+    var text, width, heights, reserve, widths;
     this.textHandler = function(ctx) {
-        if(text != this.text || width != this.width) {            
-            text = this.text;
+        if(reserve != this.text || width != this.width) {            
+            if(reserve != this.text) {
+                reserve = this.text;            
+            }
+            text = reserve.slice(0);
             width = this.width;
-            //separate any newlines
             var roomLeft = width;
-            for(var i = 0; i < text.length; i++) {                
+            for(var i = 0; i < text.length && ((i + 1) % 200 || confirm("Continue?")); i++) {                
                 var t = text[i];
-                if(t.content) {    
+                if(t.content) {
+                    text[i] = t = {
+                        color : t.color,
+                        content : t.content,
+                        font : t.font,
+                        size : t.size,
+                        style : t.style,
+                        family : t.family,
+                        weight : t.weight
+                    };
                     t.size = t.size || FONT.size;
                     if(!t.font) {
                         t.font = [
@@ -532,26 +537,47 @@ COMPONENTS.textbox = function() {
                     }  
                     ctx.font = t.font;
                     t.width = ctx.measureText(t.content).width;
-                    //decompose
-                    console.log([t.content, t.font, t.width, t.color || FONT.color]);
                     roomLeft -= t.width;
-                    if(roomLeft <= 0) {
+                    if(roomLeft < 0) {
                         var nextLine = "", removed = 0, io = t.content.lastIndexOf(" ");
-                        if(io == -1) {
-                            text.splice(i, 0, "\n");
-                            roomLeft = width;
-                        } else {
-                            while(roomLeft + removed < 0 && io != -1) {                                                        
-                                nextLine = t.content.substring(io + 1) + nextLine;
-                                t.content = t.content.substring(0, io + 1);
-                                removed = ctx.measureText(nextLine).width;
-                                io = t.content.lastIndexOf(" ");
+                        if(io == -1) { //if there are no spaces -- a word all by itself
+                            if(i > 0 && text[i - 1] != "\n") { //if this has content before
+                                text.splice(i--, 0, "\n");
+                            } else { //otherwise separate it from the content after
+                                text.splice(i + 1, 0, "\n");                                
                             }
-                            text.splice(i + 1, 0, "\n", {
-                                content : nextLine,
-                                font : t.font,
-                                color : t.color
-                            });
+                        } else {
+                            while(roomLeft + removed < 0 && t.content) { //while there are spaces and no room                                                        
+                                nextLine = t.content.substring(io) + nextLine; //move to next line
+                                t.content = t.content.substring(0, io); //remove
+                                removed = ctx.measureText(nextLine).width; //determine space removed
+                                io = t.content.lastIndexOf(" ") || 0; //get the next space
+                            }
+                            if(t.content) { //if i did not remove everything       
+                                text.splice(i + 1, 0, "\n", {
+                                    content : nextLine,
+                                    font : t.font,
+                                    size : t.size,
+                                    color : t.color
+                                });
+                            } else { //if everything was removed
+                                if(i - 1 > 0 && text[i - 1] != "\n") { //if this is not separated from the content before
+                                    t.content = nextLine;
+                                    text.splice(i--, 0, "\n");
+                                } else {
+                                    var io = nextLine.indexOf(" ", 1);
+                                    if(io != -1) {
+                                        t.content = nextLine.substring(0, io);
+                                        text.splice(i + 1, 0, "\n", {
+                                            font : t.font,
+                                            color : t.color,
+                                            content : nextLine.substring(io)
+                                        });
+                                    } else {
+                                        t.content = nextLine;
+                                    }
+                                }
+                            }
                         }
                     }
                 } else if(t == "\n") {
@@ -559,30 +585,42 @@ COMPONENTS.textbox = function() {
                 }
             }
             heights = [];
+            widths = [];
             var j = 0;
             for(i = 0; i < text.length; i++) {
-                if(text[i].content && (text[i].size > heights[j] || !heights[j])) {
-                    heights[j] = text[i].size;
+                if(text[i].content) {
+                    widths[j] = (widths[j] || 0) + text[i].width;
+                    if(text[i].size > heights[j] || !heights[j]) {
+                        heights[j] = text[i].size;
+                    }
                 } else if(text[i] == "\n") {
+                    while((i + 1 < text.length && text[i + 1].content && !(text[i + 1].content = text[i + 1].content.replace(/^\s*/, "")))
+                        || text[i + 1] == "\n") {
+                        text.splice(i + 1, 1);
+                    }
                     j++;
                 }
             }
         }
         var line = 0, x = 0, y = heights[line++];
     	ctx.textBaseline = "bottom";
-		ctx.textAlign = "left";
+		ctx.textAlign = "left";        
+		ctx.beginPath();
+		ctx.rect(-this.width / 2, -this.height / 2, this.width, this.height);
+		//ctx.clip();
+		ctx.closePath();
         for(var i = 0; i < text.length; i++) {
             var t = text[i];
             if(t.content) {
                 ctx.font = t.font;
                 ctx.fillStyle = t.color || FONT.color;
                 ctx.strokeStyle = t.color || FONT.color;
-                ctx.strokeText(t.content, -this.width / 2 + x, -this.height / 2 + y - (heights[line - 1] - t.size)/4, this.width);
-                ctx.fillText(t.content, -this.width / 2 + x, -this.height / 2 + y - (heights[line - 1] - t.size)/4, this.width);
+                ctx.strokeText(t.content, -this.width / 2 + x, -this.height / 2 + y - (heights[line - 1] - t.size) / 4);
+                ctx.fillText(t.content, -this.width / 2 + x, -this.height / 2 + y - (heights[line - 1] - t.size) / 4);
                 x += t.width;
             } else if(t == "\n") {
                 x = 0;
-                y += heights[line++];
+                y += heights[line++] || 0;
             }
         }
     };

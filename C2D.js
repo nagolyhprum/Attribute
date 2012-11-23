@@ -1,6 +1,6 @@
 (function() { //init C2D
 	function C2D(id, f) {
-		var me = this;		
+		var me = this, lastTouch;		
 		me.matrix = M();
 		me.screens = {};
 		me.stack = [];
@@ -34,7 +34,7 @@
             cvs.addEventListener('touchmove', cvs.onmousemove = function(e) { 
         	    e.preventDefault();
 				if(e.touches) { 
-					e = e.touches[0]; 
+					lastTouch = e = e.touches[0]; 
 				} 
                 if(e) {
 				    mousemove(e, me); 
@@ -43,7 +43,7 @@
             cvs.addEventListener('touchend', cvs.onmouseup = function(e) { 
         	    e.preventDefault();
 				if(e.touches) { 
-					e = e.touches[0]; 
+					e = e.touches[0] || lastTouch; 
 				} 
                 if(e) {
 				    mouseupdown(e, false, me); 
@@ -54,7 +54,7 @@
                 cvs.focus();
                 if(!me.livemouse.isdown) {
     				if(e.touches) { 
-    					e = e.touches[0];
+    					lastTouch = e = e.touches[0];
     				}   
                     if(e) {
     				    mouseupdown(e, true, me);             
@@ -103,7 +103,7 @@
 			this.ctx.textBaseline = this.textBaseline;
 			this.ctx.textAlign = this.textAlign;
             this.ctx.font = this.font;
-			this.ctx.strokeText(t, x, y, w);
+		    this.ctx.strokeText.apply(this.ctx, arguments);
 		};
 		
 		C2D.prototype.fillText = function(t, x, y, w) {
@@ -111,7 +111,7 @@
 			this.ctx.textBaseline = this.textBaseline;
 			this.ctx.textAlign = this.textAlign;
             this.ctx.font = this.font;
-			this.ctx.fillText(t, x, y, w);
+    	    this.ctx.fillText.apply(this.ctx, arguments);
 		};
 	
 		C2D.prototype.beginPath = function() {

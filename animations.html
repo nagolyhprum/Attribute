@@ -314,6 +314,29 @@
                     this.round = step(10);
                 }));
                 screen.add(new Sprite({
+                    width : 80,
+                    height : 40,
+                    text : { content : "Full Screen" },
+                    component : "button",
+                    onmouseclick : function() { c2d.fullScreen(); },
+                    onadd : function(p) { this.location = [10, p.height - this.height - 10, 1]; }
+                }));
+                //audio("images/resources/audio/win_music", function playForever() {
+                //    audio("images/resources/audio/win_music", arguments.callee);                    
+                //});
+                screen.add(new Sprite(slider, function() {
+                    this.width = 300;                    
+                    this.height = 20;
+                    this.min = 0;
+                    this.max = 300;
+                    this.round = Math.round;
+                    this.location = [300, 320, 1];
+                    this.onchange = function(val) {
+                        var tb = c2d.find({component : "textbox"})[0];
+                        tb.width = val;
+                    };
+                }));
+                screen.add(new Sprite({
                     text : [
                         {
                             content : "Hello World\nI am demonstrating a textbox right now.",
@@ -335,38 +358,29 @@
                             color : "red"
                         },
                         {
-                            content : "family",
+                            content : "family ",
                             family : '"Courier New"'
                         },
                         {
-                            content : " and "
+                            content : "and "
                         },
                         {
                             content : "size",
                             size : 24
                         },
+                        "\n",
                         {
-                            content : "size",
+                            content : "size.",
                             size : 48
                         }
                         
                     ],
+                    borderradius : 5,
                     width : 200,
                     height : 100,
-                    location : [400, 350],
+                    location : [250, 0],
                     component : "textbox"
                 }));
-                screen.add(new Sprite({
-                    width : 80,
-                    height : 40,
-                    text : { content : "Full Screen" },
-                    component : "button",
-                    onmouseclick : function() { c2d.fullScreen(); },
-                    onadd : function(p) { this.location = [10, p.height - this.height - 10, 1]; }
-                }));
-                audio("images/resources/audio/win_music", function playForever() {
-                    audio("images/resources/audio/win_music", arguments.callee);                    
-                });
 				c2d.setScreen("screen", screen);
 				c2d.start();
 			});
