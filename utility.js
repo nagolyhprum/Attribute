@@ -22,33 +22,36 @@ function img(src, onload) {
 img.CACHE = {};
 img.EVENTS = {};
 
-function audio(src, callback, ext) {
-    var channel = audio.CHANNELS[src];
+function audio(data) {
+    var channel = audio.CHANNELS[data.src], a;
+    function ended() {        
+        a.removeEventListener("ended", ended, false);
+        data.ended && data.ended();
+    }
     if(channel) {        
-        for(var i = 0; i < channel.length; i++) {
-            var a = channel[i];
+        var cache = data.cache === undefined || data.cache == true;
+        for(var i = 0; i < channel.length && cache; i++) {
+            a = channel[i];
             if(a.ended || a.paused && a.readyState == a.HAVE_ENOUGH_DATA) {
-                a.addEventListener("ended", function() {
-                    a.removeEventListener("ended", arguments.callee, false);
-                    callback && callback();
-                });
-                a.play();
+                if(data.autoplay) {
+                    a.addEventListener("ended", ended);
+                    a.play();
+                }
                 return;
             }
         }
     } else {
-        audio.CHANNELS[src] = [];
+        audio.CHANNELS[data.src] = [];
     }
-    var a;
-    audio.CHANNELS[src].push(a = new Audio());
-    a.addEventListener("ended", function() {
-        a.removeEventListener("ended", arguments.callee, false);
-        callback && callback();
-    });
+    audio.CHANNELS[data.src].push(a = new Audio());    
     a.addEventListener("loadeddata", function() {
-        a.play();
+        if(data.autoplay) {
+            a.addEventListener("ended", ended);
+            a.play();
+        }
+        data.loaded && data.loaded();
     });    
-    a.src = src + "." + (ext || audio.SUPPORTED[0]);
+    a.src = data.src + "." + (data.ext || audio.SUPPORTED[0]);
 }
 audio.CHANNELS = {};
 audio.SUPPORTED = [];
@@ -64,6 +67,62 @@ audio.SUPPORTED = [];
         }
     }
 }());
+
+function Preload(r) {
+    var i = 0;
+    (function() {
+        if(i < r.length) {
+            var o = r[i++], to = typeof o;        
+            if(to == "function") {
+                o();
+                arguments.callee();
+            } else if(to == "number") {
+                Preload.STATE = o;
+                arguments.callee();
+            } else {
+                switch(Preload.STATE) {
+                    case 1 : 
+                        audio({
+                            src : o,
+                            loaded : arguments.callee
+                        });
+                        break;                
+                    case 2 : 
+                        img(o, arguments.callee);
+                        break;
+                    case 3 : 
+                        ajax({
+                            src : o,
+                            response : "json",
+                            success : arguments.callee
+                        });
+                        break;
+                    case 4 : 
+                        ajax({
+                            src : o,
+                            response : "text",
+                            success : arguments.callee
+                        });
+                        break;
+                    case 5 : 
+                        ajax({
+                            src : o,
+                            response : "xml",
+                            success : arguments.callee
+                        });
+                        break;
+                    default : throw "Invalid State.";
+                }
+            }
+        }
+    }());
+};
+Preload.STATE = 0;
+Preload.AUDIO = 1;
+Preload.IMAGE = 2;
+Preload.JSON = 3;
+Preload.TEXT = 4;
+Preload.XML = 5;
 
 var __ERROR = 0.1;
 
@@ -286,8 +345,10 @@ function DEBUG(id, value) {
 }
 
 function ajax(config) {
-    var xmlhttp = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
-    var data = "";
+    var xmlhttp = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP"), data = "";
+    if(config.cache) {
+        data += "cache=" + new Date().getTime();
+    }
     for(var i in config.data) {
         data += (data ? "&" : "") + escape(i) + "=" + escape(config.data[i]);
     }
@@ -299,12 +360,19 @@ function ajax(config) {
         xmlhttp.send(data);
     } else {
         config.src += (config.src.indexOf("?") == -1 ? "?" : "&") + data;
-        xmlhttp.open("GET", config.src, assync);
-        xmlhttp.send();
+        if(ajax.CACHE[config.src]) {
+            if(config.success) {
+                response(config.success, ajax.CACHE[config.src]);
+            }
+        } else {
+            xmlhttp.open("GET", config.src, assync);
+            xmlhttp.send();
+        }
     }
     if(assync) {
         xmlhttp.onreadystatechange = function() {
-            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200 && config.success) {
+                ajax.CACHE[config.src] = xmlhttp;
                 response(config.success, xmlhttp);
             }
         };
@@ -312,6 +380,7 @@ function ajax(config) {
         response(config.success, xmlhttp);        
     }
 }
+ajax.CACHE = {};
 ajax.RESPONSE = {
     JSON : function(success, xmlhttp) {
         try { success(JSON.parse(xmlhttp.responseText)); }

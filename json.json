@@ -1,0 +1,8 @@
+{
+    "type" : "test",
+    "component" : "textbox",
+    "text" : [
+        "Hello World"
+    ],
+    "location" : [50, 50]
+}

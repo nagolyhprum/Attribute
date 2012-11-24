@@ -7,6 +7,21 @@
     	<script type="text/javascript" src="Robot.js"></script>
         <script type="text/javascript" src="Script.js"></script>
 		<script type="text/javascript">
+            Preload([
+                Preload.AUDIO,
+                "images/resources/audio/win_music",
+                Preload.IMAGE,
+                "images/resources/walkcycle/BODY_male.png",
+                Preload.JSON,
+                "json.json",
+                Preload.TEXT,
+                "C2D.js",
+                Preload.XML,
+                "animations.html",
+                function() {
+                    //TODO after loading all
+                }
+            ]);
 			var times = 3, speed = 50, feet = {
                     type : "feet",     
                     movement : "d",
@@ -326,9 +341,6 @@
                     onmouseclick : function() { c2d.fullScreen(); },
                     onadd : function(p) { this.location = [10, p.height - this.height - 10, 1]; }
                 }));
-                //audio("images/resources/audio/win_music", function playForever() {
-                //    audio("images/resources/audio/win_music", arguments.callee);                    
-                //});
                 screen.add(new Sprite(slider, function() {
                     this.width = 300;                    
                     this.height = 20;
