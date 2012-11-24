@@ -4,6 +4,8 @@
 		<script type="text/javascript" src="C2D.js"></script>
 		<script type="text/javascript" src="sprite.js"></script>
 		<script type="text/javascript" src="utility.js"></script>
+    	<script type="text/javascript" src="Robot.js"></script>
+        <script type="text/javascript" src="Script.js"></script>
 		<script type="text/javascript">
 			var times = 3, speed = 50, feet = {
                     type : "feet",     
@@ -124,7 +126,7 @@
                     }
                 };
             }
-			function addSprite(sprite, image, dir, columns) {
+			function addSprite(sprite, image, dir, columns, id) {
 				sprite.add(new Sprite({
 					image : dir + image + ".png",
 					columns : columns,
@@ -133,6 +135,7 @@
                     type : dir,            
 				}, function() {
                     this.animate("down");
+                    this.id = id;
                 }));
 			}
             var walkcycle_dir = "images/resources/walkcycle/", slash_dir = "images/resources/slash/";
@@ -140,14 +143,15 @@
 					width : 64,
 					height : 64,
 					init : function() {
-						addSprite(this, "BODY_male", walkcycle_dir, 9);
-						addSprite(this, "HEAD_plate_armor_helmet", walkcycle_dir, 9);
-						addSprite(this, "LEGS_plate_armor_pants", walkcycle_dir, 9);
-						addSprite(this, "TORSO_plate_armor_torso", walkcycle_dir, 9);
-						addSprite(this, "TORSO_plate_armor_arms_shoulders", walkcycle_dir, 9);
-						addSprite(this, "FEET_plate_armor_shoes", walkcycle_dir, 9);
-						addSprite(this, "HANDS_plate_armor_gloves", walkcycle_dir, 9);
-						addSprite(this, "WEAPON_shield_cutout_body", walkcycle_dir, 9);
+                        this.id = "walkcycle";
+						addSprite(this, "BODY_male", walkcycle_dir, 9, "walkcycle-child");
+						addSprite(this, "HEAD_plate_armor_helmet", walkcycle_dir, 9, "walkcycle-child");
+						addSprite(this, "LEGS_plate_armor_pants", walkcycle_dir, 9, "walkcycle-child");
+						addSprite(this, "TORSO_plate_armor_torso", walkcycle_dir, 9, "walkcycle-child");
+						addSprite(this, "TORSO_plate_armor_arms_shoulders", walkcycle_dir, 9, "walkcycle-child");
+						addSprite(this, "FEET_plate_armor_shoes", walkcycle_dir, 9, "walkcycle-child");
+						addSprite(this, "HANDS_plate_armor_gloves", walkcycle_dir, 9, "walkcycle-child");
+						addSprite(this, "WEAPON_shield_cutout_body", walkcycle_dir, 9, "walkcycle-child");
 					}
 			};
     		var slash = {
@@ -155,14 +159,15 @@
 					height : 64,
                     visible : false,
 					init : function() {
-						addSprite(this, "BODY_human", slash_dir, 6);
-						addSprite(this, "HEAD_plate_armor_helmet", slash_dir, 6);
-						addSprite(this, "LEGS_plate_armor_pants", slash_dir, 6);
-						addSprite(this, "TORSO_plate_armor_torso", slash_dir, 6);
-						addSprite(this, "TORSO_plate_armor_arms_shoulders", slash_dir, 6);
-						addSprite(this, "FEET_plate_armor_shoes", slash_dir, 6);
-						addSprite(this, "HANDS_plate_armor_gloves", slash_dir, 6);
-						addSprite(this, "WEAPON_dagger", slash_dir, 6);
+                        this.id = "slash";
+						addSprite(this, "BODY_human", slash_dir, 6, "slash-child");
+						addSprite(this, "HEAD_plate_armor_helmet", slash_dir, 6, "slash-child");
+						addSprite(this, "LEGS_plate_armor_pants", slash_dir, 6, "slash-child");
+						addSprite(this, "TORSO_plate_armor_torso", slash_dir, 6, "slash-child");
+						addSprite(this, "TORSO_plate_armor_arms_shoulders", slash_dir, 6, "slash-child");
+						addSprite(this, "FEET_plate_armor_shoes", slash_dir, 6, "slash-child");
+						addSprite(this, "HANDS_plate_armor_gloves", slash_dir, 6, "slash-child");
+						addSprite(this, "WEAPON_dagger", slash_dir, 6, "slash-child");
 					}
 			};
             var item_slot = {
@@ -383,6 +388,35 @@
                 }));
 				c2d.setScreen("screen", screen);
 				c2d.start();
+                c2d.getRobot()
+                    .wait(5000)                    
+                    .keyboard("down", 40)
+                    .wait(2000)
+                    .keyboard("up", 40)
+                    .keyboard("down", 39)
+                    .wait(1000)
+                    .keyboard("up", 39)
+                    .keyboard("down", 32)
+                    .wait(1000)
+                    .keyboard("up", 32)
+                    .keyboard("down", 32)
+                    .wait(1000)
+                    .keyboard("up", 32)
+                    .keyboard("down", 32)
+                    .wait(1000)
+                    .keyboard("up", 32)
+                    .mouse("move", [15, c2d.cvs.height - 15])
+                    .wait(1000)
+                    .mouse("down", [15, c2d.cvs.height - 15])
+                    .invoke(function(callback) {
+                        callback();
+                    })
+                    .wait(1000)
+                    .mouse("up", [15, c2d.cvs.height - 15])
+                    .invoke(function() {                        
+                        new Script(c2d, "script.txt");
+                    })
+                    .start();
 			});
 		</script>
         <style type="text/css">

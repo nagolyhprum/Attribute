@@ -1,81 +1,94 @@
-function Sprite(model, constructor) {
+function Sprite(model, constructor) {    
 	model = model || {};	
-    this.keys = model.keys || {};
-	this.index = model.index || 0;
-	this.sprites = [];
-    this.matrix = M();
-	this.location = model.location ? [model.location[0] || 0, model.location[1] || 0, 1] : [0, 0, 1];
-	this.r = model.r || 0;
-	this.dx = model.dx || 0;
-	this.dy = model.dy || 0;
-	this.dr = model.dr || 0;
-	this.sx = model.sx || 1;
-	this.sy = model.sy || 1;
-    this.textHandler = model.textHandler;
-	this.animation = {};
-	this.limit = model.limit || (1 / 0);
-	this.rows = model.rows || 1;
-	this.priority = model.priority || 0;
-	this.columns = model.columns || 1;
-	this.borderradius = model.borderradius || 0;
-	this.animations = model.animations;
-    this.swaps = model.swaps;
-    this.ontake = model.ontake;
-	this.type = model.type || "";
-	this.shape = model.shape || "r";
-	this.clips = model.clips === undefined ? true : model.clips == true;
-	this.fill = model.fill || "rgba(0,0,0,0)";
-	this.stroke = model.stroke || "rgba(0,0,0,0)";
-    this.hover = model.hover;
-    this.active = model.active;
-	this.onmouseclick = model.onmouseclick;
-	this.onmousedrag = model.onmousedrag;
-	this.onmousedown = model.onmousedown;
-	this.onmouseup = model.onmouseup;
-	this.onmousemove = model.onmousemove;
-	this.onmousein = model.onmousein;
-	this.onmouseout = model.onmouseout;
-	this.onmousemove = model.onmousemove;
-	this.collidesWith = model.collidesWith || {};
-	this.movement = model.movement || "s"; //movement type
-	this.font = model.font || "10px sans-serif";
-	this.text = model.text || "";
-	this.onadd = model.onadd; //when i am added to something
-	this.draggable = model.draggable || false;
-	this.ondrop = model.ondrop || {};
-    this.min = model.min;
-    this.max = model.max;
-    this.round = model.round;
-	this.holding = [];
-    this.onchange = model.onchange;
-    this.disabled = model.disabled;
-	this.visible = model.visible !== false && model.visible !== 0 ? 1 : model.visible;
-	if(model.image) {
-		var me = this;
-		img(model.image, function(img) {
-			me.image = img;
-			me.width = me.width || model.width || me.image.width / me.columns;
-			me.height = me.height || model.height || me.image.height / me.rows;     
-            init.call(me);
-		});
-	} else {
-		this.width = model.width || 0;
-		this.height = model.height || 0;        
-        init.call(this);
-	}   
-    function init() {
-        if(model.init) {
-            model.init.call(this);
-    	}
-    	if(constructor) {
-    		constructor.call(this);
-    	}
-        if(COMPONENTS[this.component = model.component]) {
-            COMPONENTS[this.component].call(this, model);
-        }
-        this.willStick = false;
-    } 
+    for(var i = 0; i < Sprite.DEFAULTS.r.length; i++) {
+        Sprite.DEFAULTS.r[i].call(this, model, constructor);
+    }		
 }
+
+(Sprite.DEFAULTS = function(f) {
+    if(typeof f == "string") {
+        f = new Function("model", "constructor", f);
+    }
+    (Sprite.DEFAULTS.r = Sprite.DEFAULTS.r || []).unshift(f);
+    return Sprite.DEFAULTS;
+})
+    (function(model, constructor) {        
+        if(model.image) {
+    		var me = this;
+    		img(model.image, function(img) {
+    			me.image = img;
+    			me.width = me.width || model.width || me.image.width / me.columns;
+    			me.height = me.height || model.height || me.image.height / me.rows;     
+                init.call(me);
+    		});
+    	} else {
+    		this.width = model.width || 0;
+    		this.height = model.height || 0;        
+            init.call(this);
+    	}   
+        function init() {
+            if(model.init) {
+                model.init.call(this);
+        	}
+        	if(constructor) {
+        		constructor.call(this);
+        	}
+            if(COMPONENTS[this.component = model.component]) {
+                COMPONENTS[this.component].call(this, model);
+            }
+            this.willStick = false;
+        } 
+    })
+    ("this.index = model.index || 0;")
+    ("this.keys = model.keys || {};")
+    ("this.sprites = [];")
+    ("this.matrix = M();")
+    ("this.location = model.location ? [model.location[0] || 0, model.location[1] || 0, 1] : [0, 0, 1];")  
+    ("this.r = model.r || 0;")
+	("this.dx = model.dx || 0;")
+	("this.dy = model.dy || 0;")
+	("this.dr = model.dr || 0;")
+	("this.sx = model.sx || 1;")
+	("this.sy = model.sy || 1;")    
+    ("this.textHandler = model.textHandler;")
+    ("this.animation = {};")
+	("this.limit = model.limit || (1 / 0);")
+	("this.rows = model.rows || 1;")
+	("this.priority = model.priority || 0;")
+	("this.columns = model.columns || 1;")
+	("this.borderradius = model.borderradius || 0;")
+	("this.animations = model.animations;")
+    ("this.swaps = model.swaps;")
+    ("this.ontake = model.ontake;")
+	("this.type = model.type || '';")
+	("this.shape = model.shape || 'r';")
+	("this.clips = model.clips === undefined ? true : model.clips == true;")
+    ("this.fill = model.fill || 'rgba(0,0,0,0)';")
+    ("this.stroke = model.stroke || 'rgba(0,0,0,0)';")
+    ("this.hover = model.hover;")
+    ("this.active = model.active;")
+	("this.onmouseclick = model.onmouseclick;")
+	("this.onmousedrag = model.onmousedrag;")
+	("this.onmousedown = model.onmousedown;")
+	("this.onmouseup = model.onmouseup;")
+	("this.onmousemove = model.onmousemove;")
+	("this.onmousein = model.onmousein;")
+	("this.onmouseout = model.onmouseout;")
+	("this.onmousemove = model.onmousemove;")
+	("this.collidesWith = model.collidesWith || {};")
+	("this.movement = model.movement || 's';")
+	("this.font = model.font || '10px \"Times New Roman\", sans-serif';")
+	("this.text = model.text || '';")
+	("this.onadd = model.onadd; //when i am added to something")
+	("this.draggable = model.draggable || false;")
+	("this.ondrop = model.ondrop || {};")
+    ("this.min = model.min;")
+    ("this.max = model.max;")
+    ("this.round = model.round;")
+	("this.holding = [];")
+    ("this.onchange = model.onchange;")
+    ("this.disabled = model.disabled;")
+	("this.visible = model.visible !== false && model.visible !== 0 ? 1 : model.visible;");
 
 Sprite.prototype.animate = function(name) {
 	this.animation.name = name;
@@ -212,15 +225,16 @@ Sprite.prototype.update = function(c2d) {
 	}
 	if(this.animation.name) {
 		var a = this.animations[this.animation.name];
-		this.animation.index++;
-		if(a.sequence.length == this.animation.index) {
-			this.animation.index = 0;
+		this.animation.index += Math.round(s / (1000 / 60000));
+		while(a.sequence.length <= this.animation.index) {
+			this.animation.index = this.animation.index - a.sequence.length;
 			if(a.next) {
 				if(typeof a.next == "string") {
-					a = this.animations[this.animation.name = a.next];
+					this.animation.name = a.next;
 				} else if(typeof a.next == "function") {
 					a.next.call(this);
 				}
+                a = this.animations[this.animation.name];
 			}
 		}
 		this.index = a.sequence[this.animation.index];
@@ -496,7 +510,14 @@ COMPONENTS.textbox = function() {
         fill = this.fill != "rgba(0,0,0,0)" ? this.fill : COMPONENTS.fill;
     this.stroke = stroke;
     this.fill = fill;    
-    var text, width, heights, reserve, widths;
+    var text, width, reserve, inner_cvs, inner_x = 0, inner_y = 0;
+    this.onmousedrag = function(l, oldL) {
+        var o = offset(l, oldL);
+        inner_x -= o[0];
+        inner_y -= o[1];
+        inner_x = Math.max(Math.min(inner_x, 0), Math.min(this.width - inner_cvs.width, 0));
+        inner_y = Math.max(Math.min(inner_y, 0), Math.min(this.height - inner_cvs.height, 0));
+    };
     this.textHandler = function(ctx) {
         if(reserve != this.text || width != this.width) {            
             if(reserve != this.text) {
@@ -553,7 +574,7 @@ COMPONENTS.textbox = function() {
                                 removed = ctx.measureText(nextLine).width; //determine space removed
                                 io = t.content.lastIndexOf(" ") || 0; //get the next space
                             }
-                            if(t.content) { //if i did not remove everything       
+                            if(t.content) { //if i did not remove everything 
                                 text.splice(i + 1, 0, "\n", {
                                     content : nextLine,
                                     font : t.font,
@@ -580,48 +601,59 @@ COMPONENTS.textbox = function() {
                             }
                         }
                     }
+                    t.width = ctx.measureText(t.content).width;
                 } else if(t == "\n") {
                     roomLeft = width;                    
-                }
-            }
-            heights = [];
-            widths = [];
-            var j = 0;
+                }                
+            }            
+            var max_width = 0, current_width = 0, j = 0, total_height = 0, heights = [];
             for(i = 0; i < text.length; i++) {
                 if(text[i].content) {
-                    widths[j] = (widths[j] || 0) + text[i].width;
+                    current_width += text[i].width;
                     if(text[i].size > heights[j] || !heights[j]) {
-                        heights[j] = text[i].size;
+                        total_height += (heights[j] = text[i].size);
                     }
                 } else if(text[i] == "\n") {
                     while((i + 1 < text.length && text[i + 1].content && !(text[i + 1].content = text[i + 1].content.replace(/^\s*/, "")))
                         || text[i + 1] == "\n") {
                         text.splice(i + 1, 1);
                     }
+                    if(max_width < current_width) {
+                        max_width = current_width;
+                    }
+                    current_width = 0;
                     j++;
                 }
             }
+            if(max_width < current_width) {
+                max_width = current_width;
+            }
+            inner_cvs = document.createElement("canvas");
+            inner_cvs.width = max_width;
+            inner_cvs.height = total_height;
+            var inner_ctx = inner_cvs.getContext("2d"), line = 0, x = 0, y = heights[line++];      
+            inner_ctx.textBaseline = "bottom";
+    		inner_ctx.textAlign = "left";            
+            for(var i = 0; i < text.length; i++) {
+                var t = text[i];
+                if(t.content) {
+                    inner_ctx.font = t.font;
+                    inner_ctx.fillStyle = t.color || FONT.color;
+                    inner_ctx.strokeStyle = t.color || FONT.color;
+                    inner_ctx.strokeText(t.content, x, y - (heights[line - 1] - t.size) / 4);
+                    inner_ctx.fillText(t.content, x, y - (heights[line - 1] - t.size) / 4);
+                    x += t.width;
+                } else if(t == "\n") {
+                    x = 0;
+                    y += heights[line++] || 0;
+                }
+            }      
+            inner_x = inner_y = 0;
         }
-        var line = 0, x = 0, y = heights[line++];
-    	ctx.textBaseline = "bottom";
-		ctx.textAlign = "left";        
 		ctx.beginPath();
 		ctx.rect(-this.width / 2, -this.height / 2, this.width, this.height);
-		//ctx.clip();
+		ctx.clip();
 		ctx.closePath();
-        for(var i = 0; i < text.length; i++) {
-            var t = text[i];
-            if(t.content) {
-                ctx.font = t.font;
-                ctx.fillStyle = t.color || FONT.color;
-                ctx.strokeStyle = t.color || FONT.color;
-                ctx.strokeText(t.content, -this.width / 2 + x, -this.height / 2 + y - (heights[line - 1] - t.size) / 4);
-                ctx.fillText(t.content, -this.width / 2 + x, -this.height / 2 + y - (heights[line - 1] - t.size) / 4);
-                x += t.width;
-            } else if(t == "\n") {
-                x = 0;
-                y += heights[line++] || 0;
-            }
-        }
+        ctx.drawImage(inner_cvs, inner_x - this.width / 2, inner_y - this.height / 2);
     };
 };

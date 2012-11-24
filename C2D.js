@@ -4,6 +4,8 @@
 		me.matrix = M();
 		me.screens = {};
 		me.stack = [];
+        me.timeoutID = 0;
+        me.timeouts = {};
 		me.livemouse = { 
 			request : {
 				down : false,
@@ -70,14 +72,14 @@
                 } else {
                     me.livekeyboard[key] = "down";
                 }                
-                e.preventDefault && e.preventDefault();
+                e.preventDefault();
                 return false;
             };
             cvs.onkeyup = function(e) {
                 var key = getKey(e.keyCode || e.which);
                 me.livekeyboard[key] = "up";
                 handled[key] = false;
-                e.preventDefault && e.preventDefault();
+                e.preventDefault();
                 return false;
             };
 			cvs.innerHTML = "The &lt;CANVAS&gt; element is not supported.";
@@ -244,7 +246,18 @@
 			var me = this;
             me.lastTime = new Date();
 			me.interval = setInterval(function() {
-				//process mouse
+				//get time passed and call any necessary timeouts
+                var time = new Date();
+                me.currentTime = time - me.lastTime;
+                me.lastTime = time;
+                for(var i in me.timeouts) {
+                    var to = me.timeouts[i];
+                    if((to.t -= me.currentTime) <= 0) {
+                        to.f();
+                        delete me.timeouts[i];
+                    }
+                }                                
+    			//process mouse
 				me.deadmouse = { 
 					request : {
 						down : me.livemouse.request.down,
@@ -257,15 +270,10 @@
 					lastlocation : (me.livemouse.lastlocation || [0, 0, 1]).slice(0)
 				};
                 me.deadkeyboard = me.livekeyboard;
-                var kb = "";
-                for(var i in me.deadkeyboard) {
-                    kb += i + " : " + me.deadkeyboard[i] + "<br/>";
-                }
+                me.livemouse.request = {};
                 me.livekeyboard = {};
-				//process drawing
-				me.clearRect(0, 0, me.cvs.width, me.cvs.height);                
-                me.currentTime = new Date() - me.lastTime;
-                me.lastTime = new Date();
+                
+    			me.clearRect(0, 0, me.cvs.width, me.cvs.height);                
 				me.screens[me.activeScreen].draw(me).collision(null, me).update(me);
 				//process mouse
 				if(me.deadmouse.request.up) {
@@ -281,7 +289,6 @@
 					}
 				}
 				me.livemouse.downon = me.deadmouse.downon;
-				me.livemouse.request = {};
 			}, 1000 / 60);
 		};		
 		
@@ -317,6 +324,16 @@
         C2D.prototype.measureText = function(text) {            
             this.ctx.font = this.font;
             return this.ctx.measureText(text);
+        };  
+        C2D.prototype.setTimeout = function(f, t) {
+            this.timeouts[this.timeoutID++] = {
+                f : f,
+                t : t
+            };
+            return this.timeoutID - 1;
+        };
+        C2D.prototype.clearTimeout = function(id) {
+            delete this.timeouts[id];
         };
 	} else {
 		C2D.prototype.isSupported = false;

@@ -1,0 +1,68 @@
+sprite human
+attr type human
+end
+
+sprite dummy
+attr type dummy
+end
+
+sprite walkcycle
+attr id walkcycle
+end
+
+sprite walkcycle-child
+attr id walkcycle-child
+end
+
+sprite slash
+attr id slash
+end
+
+sprite slash-child
+attr id slash-child
+end
+
+#end definitions
+
+use human
+set disabled 0
+moveTo 0 0
+
+use walkcycle-child
+animate animation-down
+
+use human
+moveBy 0 100 0 50
+
+use walkcycle-child
+animate animation-right
+
+use human
+moveBy 50 0 50 0
+
+#done moving
+
+use walkcycle-child
+animate right
+
+data attacks 0
+
+#RETURN
+
+use walkcycle
+set visible 0
+
+use slash
+set visible 1
+
+use slash-child
+animate animation-right
+
+use dummy
+animate spin
+
+wait 1000
+
+increment attacks
+
+jumpTo 50 attacks<3

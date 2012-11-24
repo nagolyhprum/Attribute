@@ -232,7 +232,7 @@ function M() {
 
 function object_is_model(obj, model) {
 	for(var j in model) {
-		if(model[j] !== obj[j]) {
+		if(model[j] != obj[j]) {
 			return 0;
 		}
 	}
@@ -284,3 +284,43 @@ function DEBUG(id, value) {
     }
     div.innerHTML = id + " : " + value;
 }
+
+function ajax(config) {
+    var xmlhttp = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+    var data = "";
+    for(var i in config.data) {
+        data += (data ? "&" : "") + escape(i) + "=" + escape(config.data[i]);
+    }
+    var assync = config.assync === undefined ? true : config.assync,
+        response = ajax.RESPONSE[(config.response || "").toUpperCase()] || ajax.RESPONSE.TEXT;
+    if((config.method || "").toUpperCase() == "POST") {
+        xmlhttp.open("POST", config.src, assync);
+        xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+        xmlhttp.send(data);
+    } else {
+        config.src += (config.src.indexOf("?") == -1 ? "?" : "&") + data;
+        xmlhttp.open("GET", config.src, assync);
+        xmlhttp.send();
+    }
+    if(assync) {
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                response(config.success, xmlhttp);
+            }
+        };
+    } else if(config.success) {
+        response(config.success, xmlhttp);        
+    }
+}
+ajax.RESPONSE = {
+    JSON : function(success, xmlhttp) {
+        try { success(JSON.parse(xmlhttp.responseText)); }
+        catch (e) { success(xmlhttp.responseText); }
+    },
+    TEXT : function(success, xmlhttp) {
+        success(xmlhttp.responseText);        
+    },
+    XML : function(success, xmlhttp) {
+        success(xmlhttp.responseXML);
+    }
+};
