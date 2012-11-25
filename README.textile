@@ -2,17 +2,16 @@ h1. Attribute
 
 This is a canvas animation library propelled using attributes and reusable models.
 
-Instead of having a bunch of different "classes" this library depends on one primary function. The Sprite.
+Instead of having a bunch of different "classes" this library depends on one primary data structure. The Sprite.
 
 A sprite can be anything at anytime and its behavior is determined by the attributes applied to it.
 
 A sprite's default behavior can be changed at anytime.
 
-JSON can be used to create these object.
+JSON can be used to create these object as well.
 
 h4. TODO
 
 * User can opt out of take, drop and swap by returning false
 * Detect swap event
-* Update demo_word_scramble.html
-* Allow strings to reference functions when modeling
+* Optimize collision

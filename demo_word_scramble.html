@@ -11,8 +11,8 @@
 		</style>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 		<script type="text/javascript" src="C2D.js"></script>
-		<script type="text/javascript" src="utility.js"></script>
-		<script type="text/javascript" src="sprite.js"></script>
+		<script type="text/javascript" src="Utility.js"></script>
+		<script type="text/javascript" src="Sprite.js"></script>
 		<script type="text/javascript">	
 			(function() {
 				var questions = [
@@ -51,7 +51,6 @@
 							for(var i = 0; (i < MAX_WORDS) && (i < split.length); i++) {
 								draggableWords[i].sprites[0].text = split[i];
 								draggableWords[i].visible = 1;
-								droppableWords_q[i].visible = 1;
 								droppableWords_a[i].visible = 1;
 							}
 						});
@@ -60,10 +59,9 @@
 					function hideAll() {
 						for(var i = 0; i < MAX_WORDS; i++) {
 							draggableWords[i].take();
-							draggableWords[i].drop(droppableWords_q[i]);
+							draggableWords[i].drop(droppableWords_a[i]);
 							draggableWords[i].text = 0;
 							draggableWords[i].visible = 0;
-							droppableWords_q[i].visible = 0;
 							droppableWords_a[i].visible = 0;
 						}
 					}
@@ -71,14 +69,7 @@
 					var screen = new Sprite({
 						width : 640,
 						height : 480
-					}), droppableWord_q = {
-						type : "droppable_q",
-						limit : 1,
-						width : WIDTH,
-						height : HEIGHT,
-						borderradius : 5,
-						stroke : "black"
-					}, droppableWord_a = {
+					}), droppableWord_a = {
 						type : "droppable_a",
 						limit : 1,
 						width : WIDTH,
@@ -95,10 +86,6 @@
 						},
 						ondrop : {
 							droppable_a : function(d) {
-								this.location = d.location.slice(0);
-								this.stick();
-							},
-							droppable_q : function(d) {
 								this.location = d.location.slice(0);
 								this.stick();
 							}
@@ -134,38 +121,25 @@
 					screen.add(new Sprite({ //button
 						borderradius : 5,
 						stroke : "#666666",
-						type : "submit",
-						fill : "#000000",
-						init : function() {
-							this.add(new Sprite({
-								stroke : "#ffffff",
-								fill : "#ffffff",
-								text : "Submit"
-							}));
-						},
-						/*
-						onmousedown : function() {							
-							this.fill = "#0078a3";
-						},
-						onmouseup : function() {
-							this.fill = "#f58400";
-						},
-						onmousein : function() {
-							if(cvs.mouse().downon.contains(this)) {
-								this.fill = "#0078a3";
-							} else {
-								this.fill = "#f58400";
-							}
-						},	
-						onmouseout : function() {
-							this.fill = "#000000";
-						},
-						*/
+						fill : "black",
+                        text : {
+                            content : "Submit",
+                            color : "white"
+                        },
+                        active : {
+                            fill : "#0078a3",
+                            stroke : "#666666"
+                        },
+                        hover : {
+    						fill : "#f58400",
+                            stroke : "#666666"                                                
+                        },
+                        component : "button",
 						onmouseclick : function() {
 							var answer = "";
 							for(var i = 0; i < MAX_WORDS; i++) {
 								var holding = droppableWords_a[i].holding;
-								if(!holding.length) {
+								if(!droppableWords_a[i].visible) {
 									break;
 								}
 								var text = holding[0].sprites[0].text;
@@ -183,20 +157,15 @@
 						location : [320 - WIDTH / 2, 390]
 					}));
 					for(var i = 0; i < MAX_WORDS; i++) {
-						screen.add(new Sprite(droppableWord_q, function() {
-							this.location = [10 + i * (WIDTH + 10) + (10 * i), 320 + HEIGHT + 10, 1];
-						}));
 						screen.add(new Sprite(droppableWord_a, function() {
 							this.location = [10 + i * (WIDTH + 10) + (10 * i), 320, 1];
 						}));
 						screen.add(new Sprite(draggableWord));
 					}
 					
-					var draggableWords = screen.find({type:"draggable"}),
-						droppableWords_q = screen.find({type:"droppable_q"}),						
+					var draggableWords = screen.find({type:"draggable"}),						
 						droppableWords_a = screen.find({type:"droppable_a"}),
-						image = screen.find({type:"image"})[0],
-						submit = screen.find({type:"submit"})[0];
+						image = screen.find({type:"image"})[0];
 					
 					img("images/ui-bg_gloss-wave_30_3d3644_500x100.png", function(img) { //background
 						screen.fill = cvs.context().createPattern(img, "repeat");
@@ -210,10 +179,8 @@
 					
 					img("images/ui-bg_highlight-soft_25_30273a_1x100.png", function(img) { //dropzones
 						for(var i = 0; i < MAX_WORDS; i++) {
-							droppableWords_q[i].fill = cvs.context().createPattern(img, "repeat");
 							droppableWords_a[i].fill = cvs.context().createPattern(img, "repeat");
 						}
-						submit.fill = cvs.context().createPattern(img, "repeat");
 					});
 					setUpScene();
 					cvs.setScreen("screen", screen).start();

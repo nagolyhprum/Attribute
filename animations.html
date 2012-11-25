@@ -2,85 +2,165 @@
 <html>
 	<head>
 		<script type="text/javascript" src="C2D.js"></script>
-		<script type="text/javascript" src="sprite.js"></script>
-		<script type="text/javascript" src="utility.js"></script>
+		<script type="text/javascript" src="Sprite.js"></script>
+		<script type="text/javascript" src="Utility.js"></script>
     	<script type="text/javascript" src="Robot.js"></script>
         <script type="text/javascript" src="Script.js"></script>
-		<script type="text/javascript">
-            Preload([
-                Preload.AUDIO,
-                "images/resources/audio/win_music",
-                Preload.IMAGE,
-                "images/resources/walkcycle/BODY_male.png",
-                Preload.JSON,
-                "json.json",
-                Preload.TEXT,
-                "C2D.js",
-                Preload.XML,
-                "animations.html",
-                function() {
-                    //TODO after loading all
-                }
-            ]);
-			var times = 3, speed = 50, feet = {
-                    type : "feet",     
-                    movement : "d",
-                    stroke : "blue",
-                    onadd : function(p) {
-                        this.width = p.width / 2;
-                        this.height = p.height / 2;
-                        this.location = [this.width / 2, p.height - this.height, 1];
+		<script type="text/javascript">                 
+            var weapons = ["axe", "bigclub", "bow", "claw", "dagger", "halberd", "hammer"], 
+                index = 0, 
+                times = 3, 
+                speed = 50, 
+                c2d;                          
+            (function() {
+                
+                Sprite.FUNCTIONS["feet.onadd"] = function(p) {
+                    this.width = p.width / 2;
+                    this.height = p.height / 2;
+                    this.location = [this.width / 2, p.height - this.height, 1];
+                };
+                Sprite.FUNCTIONS["feet.collidesWith"] = {
+                    feet : function(feet) { 
+                        var p = feet.parent, pt = this.parent;
+                        p.location[0] -= p.dx * c2d.getTimeInterval();
+                        p.location[1] -= p.dy * c2d.getTimeInterval();
+                        pt.location[0] -= pt.dx * c2d.getTimeInterval();
+                        pt.location[1] -= pt.dy * c2d.getTimeInterval();
+                        p.dx = p.dy = pt.dx = pt.dy = 0;
                     },
-                    collidesWith : {
-                        feet : function(feet) { 
-                            var p = feet.parent, pt = this.parent;
-                            p.location[0] -= p.dx * c2d.getTimeInterval();
-                            p.location[1] -= p.dy * c2d.getTimeInterval();
-                            pt.location[0] -= pt.dx * c2d.getTimeInterval();
-                            pt.location[1] -= pt.dy * c2d.getTimeInterval();
-                            p.dx = p.dy = pt.dx = pt.dy = 0;
-                        },
-                        "" : function() {}
-                    }
-                }, keys =  {
-                up : stdKey("dy", "up", -1),
-                down : stdKey("dy", "down", 1),
-                left : stdKey("dx", "left", -1),
-                right : stdKey("dx", "right", 1),
-                space : {
-                    press : function() {
-                        if(!this.isMoving()) {
-                            this.disabled = true;
-                            this.sprites[0].visible = false;
-                            this.sprites[1].visible = true;                     
-                            var name = this.sprites[0].sprites[0].animation.name;
-                            this.attack.location = this.location.slice();
-                            if(name == "up" || name == "down") {
-                                this.attack.location[0] += this.attack.width / 2;
+                    "" : function() {}
+                };
+                //HUMAN FUNCTIONS
+                Sprite.FUNCTIONS["human.keys"] = {
+                    up : stdKey("dy", "up", -1),
+                    down : stdKey("dy", "down", 1),
+                    left : stdKey("dx", "left", -1),
+                    right : stdKey("dx", "right", 1),
+                    space : {
+                        press : function() {
+                            if(!this.isMoving()) {
+                                this.disabled = true;
+                                this.sprites[0].visible = false;
+                                this.sprites[1].visible = true;                     
+                                var name = this.sprites[0].sprites[0].animation.name;
+                                this.attack.location = this.location.slice();
+                                if(name == "up" || name == "down") {
+                                    this.attack.location[0] += this.attack.width / 2;
+                                }
+                                if(name == "left" || name == "right") {
+                                    this.attack.location[1] += this.attack.height / 2;                                
+                                }
+                                if(name == "right") {
+                                    this.attack.location[0] += this.attack.width;
+                                }
+                                if(name == "down") {
+                                    this.attack.location[1] += this.attack.height;
+                                }  
+                                if(name.indexOf("animation-") !== 0) {
+                                    name = "animation-" + name;
+                                }
+                                for(var i = 0; i < this.sprites[0].sprites.length; i++) {
+                                    this.sprites[1].sprites[i].animate(name);
+                                }  
+                                this.attack.visible = 1;
                             }
-                            if(name == "left" || name == "right") {
-                                this.attack.location[1] += this.attack.height / 2;                                
-                            }
-                            if(name == "right") {
-                                this.attack.location[0] += this.attack.width;
-                            }
-                            if(name == "down") {
-                                this.attack.location[1] += this.attack.height;
-                            }  
-                            if(name.indexOf("animation-") !== 0) {
-                                name = "animation-" + name;
-                            }
-                            for(var i = 0; i < this.sprites[0].sprites.length; i++) {
-                                this.sprites[1].sprites[i].animate(name);
-                            }  
-                            this.attack.visible = 1;
                         }
                     }
-                }
-            };
+                };
+                Sprite.FUNCTIONS["walkcycle.init"] = function() {
+    				addSprite(this, "BODY_male", "walkcycle_child");
+    				addSprite(this, "HEAD_plate_armor_helmet", "walkcycle_child");
+    				addSprite(this, "LEGS_plate_armor_pants", "walkcycle_child");
+    				addSprite(this, "TORSO_plate_armor_torso", "walkcycle_child");
+    				addSprite(this, "TORSO_plate_armor_arms_shoulders", "walkcycle_child");
+    				addSprite(this, "FEET_plate_armor_shoes", "walkcycle_child");
+    				addSprite(this, "HANDS_plate_armor_gloves", "walkcycle_child");
+    				addSprite(this, "WEAPON_shield_cutout_body", "walkcycle_child");
+    			};
+                Sprite.FUNCTIONS["slash.init"] = function() {
+    				addSprite(this, "BODY_human", "slash_child");
+    				addSprite(this, "HEAD_plate_armor_helmet", "slash_child");
+    				addSprite(this, "LEGS_plate_armor_pants", "slash_child");
+    				addSprite(this, "TORSO_plate_armor_torso", "slash_child");
+    				addSprite(this, "TORSO_plate_armor_arms_shoulders", "slash_child");
+    				addSprite(this, "FEET_plate_armor_shoes", "slash_child");
+    				addSprite(this, "HANDS_plate_armor_gloves", "slash_child");
+    				addSprite(this, "WEAPON_dagger", "slash_child");
+    			};
+                Sprite.FUNCTIONS["item_slot.onadd"] = function(p) {      
+                    var s = new Sprite("item");  
+                    s.drop(this);     
+                    p.add(s);
+                };
+                Sprite.FUNCTIONS["item.ondrop"] = {
+                    "item_slot" : function(item_slot) {
+                        this.location = item_slot.location.slice(0);
+                        this.stick();
+                    }
+                };
+                Sprite.FUNCTIONS["item.init"] = function() {
+                    var me = this;
+                    index++;
+                    img("images/resources/weapons/icon_" + weapons[0] + index + ".png", function(img) {
+                        me.image = img;
+                    });
+                    if((index = index % 3) == 0) {
+                        weapons.shift();
+                    }
+                };
+                Sprite.FUNCTIONS["dummy.animations"] = {
+                    spin : {
+                        sequence : H(1, 8, times),
+                        next: "stop"
+                    },
+                    stop : { sequence : [0] }
+                };
+                Sprite.FUNCTIONS["dummy.collidesWith"] = {human:function(){}};
+                Sprite.FUNCTIONS["dummy.init"] = function() { this.add("feet"); };
+                Sprite.FUNCTIONS["sub.animations(6)"] = animations(6);
+                Sprite.FUNCTIONS["sub.animations(9)"] = animations(9);
+                Sprite.FUNCTIONS["slider.onchange"] = function(v, lv) {
+                    DEBUG(this.id, ["New Value : ", v, ", Old Value : ", lv].join(""));
+                };
+                Sprite.FUNCTIONS["human.collidesWith"] = {dummy : function(){}};
+                Sprite.FUNCTIONS["human.onadd"] = function(p) {
+                    p.add(this.attack = new Sprite("attack"));
+                };
+                Sprite.FUNCTIONS["attack.collidesWith"] = {
+                    dummy : function(dummy) {
+                        if(dummy.animation.name != "spin") { dummy.animate("spin"); }
+                    }
+                };
+                Sprite.FUNCTIONS["fullscreen.onmouseclick"] = function() { c2d.fullScreen(); };
+                Sprite.FUNCTIONS["fullscreen.onadd"] = function(p) { this.location = [10, p.height - this.height - 10, 1]; };
+                Sprite.FUNCTIONS["inventory.onadd"] = function() {
+                    this.location = [this.parent.width - this.width - 1, 1, 1];
+                    for(var i = 0; i < 21; ) {
+                        for(var j = 1; j < 4; i++, j++) {
+                            var c = i % 3, r = Math.floor(i / 3);
+                            this.add(new Sprite("item_slot", function() {
+                                this.location = [c * 32 + (c + 1) * 10, r * 32 + (r + 1) * 10, 1];
+                            }));
+                        }
+                    }
+                };
+                Sprite.FUNCTIONS["screen.init"] = function() {                  
+                    var me = this;
+                    for(var i = 0; i < 10; i++) {
+                        for(var j = 0; j < 8; j++) {
+                            (function() {
+                                var location = [64 * i, 64 * j, 1];
+                                me.add(new Sprite("grass", function() {                            
+                                    this.location = location;
+                                }));
+                            }());
+                        }
+                    }  
+                };
+            }());
             function animations(columns) {
                 return {
-        			"up" : {
+            		"up" : {
     					sequence : [0]
     				},
     				"animation-up" : {
@@ -141,295 +221,97 @@
                     }
                 };
             }
-			function addSprite(sprite, image, dir, columns, id) {
-				sprite.add(new Sprite({
-					image : dir + image + ".png",
-					columns : columns,
-					rows : 4,
-					animations : animations(columns),
-                    type : dir,            
-				}, function() {
-                    this.animate("down");
-                    this.id = id;
-                }));
-			}
-            var walkcycle_dir = "images/resources/walkcycle/", slash_dir = "images/resources/slash/";
-			var walkcycle = {
-					width : 64,
-					height : 64,
-					init : function() {
-                        this.id = "walkcycle";
-						addSprite(this, "BODY_male", walkcycle_dir, 9, "walkcycle-child");
-						addSprite(this, "HEAD_plate_armor_helmet", walkcycle_dir, 9, "walkcycle-child");
-						addSprite(this, "LEGS_plate_armor_pants", walkcycle_dir, 9, "walkcycle-child");
-						addSprite(this, "TORSO_plate_armor_torso", walkcycle_dir, 9, "walkcycle-child");
-						addSprite(this, "TORSO_plate_armor_arms_shoulders", walkcycle_dir, 9, "walkcycle-child");
-						addSprite(this, "FEET_plate_armor_shoes", walkcycle_dir, 9, "walkcycle-child");
-						addSprite(this, "HANDS_plate_armor_gloves", walkcycle_dir, 9, "walkcycle-child");
-						addSprite(this, "WEAPON_shield_cutout_body", walkcycle_dir, 9, "walkcycle-child");
-					}
-			};
-    		var slash = {
-					width : 64,
-					height : 64,
-                    visible : false,
-					init : function() {
-                        this.id = "slash";
-						addSprite(this, "BODY_human", slash_dir, 6, "slash-child");
-						addSprite(this, "HEAD_plate_armor_helmet", slash_dir, 6, "slash-child");
-						addSprite(this, "LEGS_plate_armor_pants", slash_dir, 6, "slash-child");
-						addSprite(this, "TORSO_plate_armor_torso", slash_dir, 6, "slash-child");
-						addSprite(this, "TORSO_plate_armor_arms_shoulders", slash_dir, 6, "slash-child");
-						addSprite(this, "FEET_plate_armor_shoes", slash_dir, 6, "slash-child");
-						addSprite(this, "HANDS_plate_armor_gloves", slash_dir, 6, "slash-child");
-						addSprite(this, "WEAPON_dagger", slash_dir, 6, "slash-child");
-					}
-			};
-            var item_slot = {
-                swaps : true,
-                limit : 1,
-                type : "item_slot",
-                stroke : "black",
-                fill : "gray",
-                width : 32,
-                height : 32,
-                priority : 4,
-                onadd : function(p) {      
-                    var s = new Sprite(item);  
-                    s.drop(this);     
-                    p.add(s);
-                }
-            };      
-            var weapons = ["axe", "bigclub", "bow", "claw", "dagger", "halberd", "hammer"], index = 0, item = {
-                priority : 5,
-                width : 32,
-                height : 32,
-                ondrop : {
-                    "item_slot" : function(item_slot) {
-                        this.location = item_slot.location.slice(0);
-                        this.stick();
-                    }
-                },
-                init : function() {
+			function addSprite(sprite, image, model) {
+				sprite.add(new Sprite(model, function() {
                     var me = this;
-                    index++;
-                    img("images/resources/weapons/icon_" + weapons[0] + index + ".png", function(img) {
-                        me.image = img;
-                    });
-                    if((index = index % 3) == 0) {
-                        weapons.shift();
-                    }
-                },
-                draggable : true
-            };                    
-			var c2d = new C2D("screen", function() {
-                var screen = new Sprite({
-                    width : 640,
-                    height : 480
-                });
-                for(var i = 0; i < 10; i++) {
-                    for(var j = 0; j < 8; j++) {
-                        screen.add(new Sprite({
-                            index : 10,
-                            location : [64 * i, 64 * j],
-                            width : 64,
-                            height : 64,
-                            image : "images/resources/environment/town.png",
-                            columns : 10,
-                            rows : 3,
-                            priority : -5
-                        }));
-                    }
-                }
-                var inventory = new Sprite({
-                    clips : false,
-                    width : 32 * 3 + 10 * (3 + 1),
-                    height : 32 * 7 + 10 * (7 + 1),
-                    priority : 3,
-                    fill : "gray",
-                    stroke : "black",
-                    onadd : function(p) {
-                        this.location = [this.parent.width - this.width - 1, 1, 1];
-                    }
-                });
-                for(var i = 0; weapons.length;) {
-                    for(var j = 1; j < 4; i++, j++) {
-                        var c = i % 3, r = Math.floor(i / 3);
-                        inventory.add(new Sprite(item_slot, function() {
-                            this.location = [c * 32 + (c + 1) * 10, r * 32 + (r + 1) * 10, 1];
-                        }));
-                    }
-                }
-                screen.add(inventory);
-                screen.add(new Sprite({
-                    image : "images/resources/combat_dummy/BODY_animation.png",
-                    rows : 1,
-                    columns : 8,
-                    animations : {
-                        spin : {
-                            sequence : H(1, 8, times),
-                            next: "stop"
-                        },
-                        stop : { sequence : [0] }
-                    },
-                    init : function() { this.add(new Sprite(feet)); },
-                    stroke : "blue",
-                    location : [100, 100],
-                    type : "dummy",
-                    collidesWith : {human:function(){}}
-                }));
-                screen.add(new Sprite({
-                	width : 64,
-    				height : 64,
-                    movement : "d",
-                    keys : keys,
-                    type : "human",
-                    stroke : "blue",
-                    collidesWith : {dummy : function(){}},
-                    onadd : function() {
-                        screen.add(this.attack = new Sprite({
-                            width : 32,
-                            height : 32,
-                            visible : 0,
-                            movement : "d",
-                            stroke : "red",
-                            collidesWith : {
-                                dummy : function(dummy) {
-                                    if(dummy.animation.name != "spin") { dummy.animate("spin"); }
-                                }
-                            }
-                        }));
-                    }
-    			}, function() {
-    				this.add(new Sprite(walkcycle));
-                    this.add(new Sprite(slash));
-                    this.add(new Sprite(feet));
-    			}));
-                var slider = {
-                    component : "slider",
-                    onchange : function(v, lv) {
-                        DEBUG(this.id, ["New Value : ", v, ", Old Value : ", lv].join(""));
-                    },
-                    init : function() { this.id = id++; }
-                }, id = 1;
-                screen.add(new Sprite(slider, function() {
-                    this.location = [100, 450];
-                    this.width = 100;
-                    this.height = 20;  
-                }));
-                screen.add(new Sprite(slider, function() {
-                    this.width = 20;
-                    this.height = 100;
-                    this.location = [210, 370];
-                    this.min = -2;
-                    this.max = 3;      
-                    this.round = Math.round;
-                }));
-                screen.add(new Sprite(slider, function() {
-                    this.width = 20;
-                    this.height = 100;
-                    this.location = [240, 370];
-                    this.min = -50;
-                    this.max = 50;
-                    this.round = step(10);
-                }));
-                screen.add(new Sprite({
-                    width : 80,
-                    height : 40,
-                    text : { content : "Full Screen" },
-                    component : "button",
-                    onmouseclick : function() { c2d.fullScreen(); },
-                    onadd : function(p) { this.location = [10, p.height - this.height - 10, 1]; }
-                }));
-                screen.add(new Sprite(slider, function() {
-                    this.width = 300;                    
-                    this.height = 20;
-                    this.min = 0;
-                    this.max = 300;
-                    this.round = Math.round;
-                    this.location = [300, 320, 1];
-                    this.onchange = function(val) {
-                        var tb = c2d.find({component : "textbox"})[0];
-                        tb.width = val;
-                    };
-                }));
-                screen.add(new Sprite({
-                    text : [
-                        {
-                            content : "Hello World\nI am demonstrating a textbox right now.",
-                        },
-                        "\n",
-                        {
-                            content : "Look I can change "                            
-                        },
-                        {
-                            content : "style ",
-                            style : "italic"
-                        },
-                        {
-                            content : "weight ",
-                            weight : "bold "
-                        },
-                        {
-                            content : "color ",
-                            color : "red"
-                        },
-                        {
-                            content : "family ",
-                            family : '"Courier New"'
-                        },
-                        {
-                            content : "and "
-                        },
-                        {
-                            content : "size",
-                            size : 24
-                        },
-                        "\n",
-                        {
-                            content : "size.",
-                            size : 48
-                        }
-                        
-                    ],
-                    borderradius : 5,
-                    width : 200,
-                    height : 100,
-                    location : [250, 0],
-                    component : "textbox"
-                }));
-				c2d.setScreen("screen", screen);
-				c2d.start();
-                c2d.getRobot()
-                    .wait(5000)                    
-                    .keyboard("down", 40)
-                    .wait(2000)
-                    .keyboard("up", 40)
-                    .keyboard("down", 39)
-                    .wait(1000)
-                    .keyboard("up", 39)
-                    .keyboard("down", 32)
-                    .wait(1000)
-                    .keyboard("up", 32)
-                    .keyboard("down", 32)
-                    .wait(1000)
-                    .keyboard("up", 32)
-                    .keyboard("down", 32)
-                    .wait(1000)
-                    .keyboard("up", 32)
-                    .mouse("move", [15, c2d.cvs.height - 15])
-                    .wait(1000)
-                    .mouse("down", [15, c2d.cvs.height - 15])
-                    .invoke(function(callback) {
-                        callback();
+                    img(me.type + image + ".png", function(img) {
+                        me.image = img;              
+                        me.width = me.image.width / me.columns;
+                        me.height = me.image.height / me.rows;      
+                        me.animate("down");
                     })
-                    .wait(1000)
-                    .mouse("up", [15, c2d.cvs.height - 15])
-                    .invoke(function() {                        
-                        new Script(c2d, "script.txt");
-                    })
-                    .start();
-			});
+                }));                
+			}            
+            Preload([
+                Preload.SPRITE,
+                "sprite.json",     
+                function() {                                 
+                	c2d = new C2D("screen", function(c2d) {
+                        c2d.setScreen("s", 
+                            new Sprite("screen").add("inventory")
+                                .add("dummy")
+                                .add(new Sprite("human", function() {
+                    				this.add("walkcycle");
+                                    this.add("slash");
+                                    this.add("feet");
+                    			}))
+                                .add(new Sprite("slider", function() {
+                                    this.location = [100, 450];
+                                    this.width = 100;
+                                    this.height = 20;  
+                                }))
+                                .add(new Sprite("slider", function() {
+                                    this.width = 20;
+                                    this.height = 100;
+                                    this.location = [210, 370];
+                                    this.min = -2;
+                                    this.max = 3;      
+                                    this.round = Math.round;
+                                }))
+                                .add(new Sprite("slider", function() {
+                                    this.width = 20;
+                                    this.height = 100;
+                                    this.location = [240, 370];
+                                    this.min = -50;
+                                    this.max = 50;
+                                    this.round = step(10);
+                                }))
+                                .add("fullscreen")
+                                .add(new Sprite("slider", function() {
+                                    this.width = 300;                    
+                                    this.height = 20;
+                                    this.min = 0;
+                                    this.max = 300;
+                                    this.round = Math.round;
+                                    this.location = [300, 320, 1];
+                                    this.onchange = function(val) {
+                                        var tb = c2d.find({component : "textbox"})[0];
+                                        tb.width = val;
+                                    };
+                                }))
+                                .add("textbox")
+                        ).start().getRobot()
+                            .wait(5000)                    
+                            .keyboard("down", 40)
+                            .wait(2000)
+                            .keyboard("up", 40)
+                            .keyboard("down", 39)
+                            .wait(1000)
+                            .keyboard("up", 39)
+                            .keyboard("down", 32)
+                            .wait(1000)
+                            .keyboard("up", 32)
+                            .keyboard("down", 32)
+                            .wait(1000)
+                            .keyboard("up", 32)
+                            .keyboard("down", 32)
+                            .wait(1000)
+                            .keyboard("up", 32)
+                            .mouseToSprite("move", {id:"fullscreen"})
+                            .wait(1000)
+                            .mouseToSprite("down", {id:"fullscreen"})
+                            .invoke(function(callback) {
+                                callback();
+                            })
+                            .wait(1000)
+                            .mouseToSprite("up", {id:"fullscreen"})
+                            .invoke(function() {                        
+                                c2d.runScript("script.txt");
+                            })
+                            .start();
+        			});
+                }
+            ]);
 		</script>
         <style type="text/css">
             td {

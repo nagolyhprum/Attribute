@@ -1,0 +1,172 @@
+{
+    "walkcycle_child": {
+        "columns": 9,
+        "rows": 4,
+        "animations": "sub.animations(9)",
+        "type": "images/resources/walkcycle/",
+        "id": "walkcycle-child"
+    },
+    "slash_child": {
+        "columns": 6,
+        "rows": 4,
+        "animations": "sub.animations(6)",
+        "type": "images/resources/slash/",
+        "id": "slash-child"
+    },
+    "walkcycle": {
+        "width": 64,
+        "height": 64,
+        "id": "walkcycle",
+        "init": "walkcycle.init"
+    },
+    "feet": {
+        "type": "feet",
+        "movement": "d",
+        "stroke": "blue",
+        "onadd": "feet.onadd",
+        "collidesWith": "feet.collidesWith"
+    },
+    "slash": {
+        "width": 64,
+        "height": 64,
+        "visible": false,
+        "id": "slash",
+        "init": "slash.init"
+    },
+    "item_slot": {
+        "swaps": true,
+        "limit": 1,
+        "type": "item_slot",
+        "stroke": "black",
+        "fill": "gray",
+        "width": 32,
+        "height": 32,
+        "priority": 4,
+        "onadd": "item_slot.onadd"
+    },
+    "item": {
+        "priority": 5,
+        "width": 32,
+        "height": 32,
+        "ondrop": "item.ondrop",
+        "init": "item.init",
+        "draggable": true
+    },
+    "screen": {
+        "width": 640,
+        "height": 480,
+        "init" : "screen.init"
+    },
+    "grass": {
+        "index": 10,
+        "width": 64,
+        "height": 64,
+        "image": "images/resources/environment/town.png",
+        "columns": 10,
+        "rows": 3,
+        "priority": -5
+    },
+    "inventory": {
+        "clips": false,
+        "width": 136,
+        "height": 304,
+        "priority": 3,
+        "fill": "gray",
+        "stroke": "black",
+        "onadd": "inventory.onadd"
+    },
+    "dummy": {
+        "image": "images/resources/combat_dummy/BODY_animation.png",
+        "rows": 1,
+        "columns": 8,
+        "animations": "dummy.animations",
+        "init": "dummy.init",
+        "stroke": "blue",
+        "location": [
+            100,
+            100
+        ],
+        "type": "dummy",
+        "collidesWith": "dummy.collidesWith"
+    },
+    "slider": {
+        "component": "slider",
+        "onchange": "slider.onchange"
+    },
+    "attack": {
+        "width": 32,
+        "height": 32,
+        "visible": 0,
+        "movement": "d",
+        "stroke": "red",
+        "collidesWith": "attack.collidesWith"
+    },
+    "human": {
+        "width": 64,
+        "height": 64,
+        "movement": "d",
+        "keys": "human.keys",
+        "type": "human",
+        "stroke": "blue",
+        "collidesWith": "human.collidesWith",
+        "onadd": "human.onadd"
+    },
+    "textbox": {
+        "text": [
+            {
+                "content": "Hello World\nI am demonstrating a textbox right now."
+            },
+            "\n",
+            {
+                "content": "Look I can change"
+            },
+            {
+                "content": " style",
+                "style": "italic"
+            },
+            {
+                "content": " weight",
+                "weight": "bold"
+            },
+            {
+                "content": " color",
+                "color": "red"
+            },
+            {
+                "content": " family",
+                "family": "\"CourierNew\""
+            },
+            {
+                "content": " and "
+            },
+            {
+                "content": "size ",
+                "size": 24
+            },
+            "\n",
+            {
+                "content": "size.",
+                "size": 48
+            }
+        ],
+        "borderradius": 5,
+        "width": 200,
+        "height": 100,
+        "location": [
+            250,
+            0
+        ],
+        "component": "textbox"
+    },
+    "fullscreen": {
+        "width": 80,
+        "height": 40,
+        "text": {
+            "content": "FullScreen"
+        },
+        "id": "fullscreen",
+        "component": "button",
+        "onmouseclick": "fullscreen.onmouseclick",
+        "onadd": "fullscreen.onadd"
+    }
+}

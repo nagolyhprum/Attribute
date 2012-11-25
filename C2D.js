@@ -85,7 +85,7 @@
 			cvs.innerHTML = "The &lt;CANVAS&gt; element is not supported.";
 			cvs.tabIndex = 1;
 			if(f && me.isSupported) {
-				f();
+				f(me);
 			}
 		});
 	}
@@ -250,6 +250,7 @@
                 var time = new Date();
                 me.currentTime = time - me.lastTime;
                 me.lastTime = time;
+                DEBUG("Current Time", me.currentTime);
                 for(var i in me.timeouts) {
                     var to = me.timeouts[i];
                     if((to.t -= me.currentTime) <= 0) {
@@ -274,7 +275,7 @@
                 me.livekeyboard = {};
                 
     			me.clearRect(0, 0, me.cvs.width, me.cvs.height);                
-				me.screens[me.activeScreen].draw(me).collision(null, me).update(me);
+				me.screens[me.activeScreen].collision(null, me).update(me).draw(me);
 				//process mouse
 				if(me.deadmouse.request.up) {
 					me.deadmouse.downon = [];
@@ -290,6 +291,7 @@
 				}
 				me.livemouse.downon = me.deadmouse.downon;
 			}, 1000 / 60);
+            return me;
 		};		
 		
 		C2D.prototype.mouse = function() {

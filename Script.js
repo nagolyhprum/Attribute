@@ -1,4 +1,8 @@
 (function() {
+    C2D.prototype.runScript = function(src) {
+        new Script(this, src);
+    }
+    
     function Script(c2d, src) {
         var me = this;
         this.c2d = c2d;   
