@@ -1,3 +1,33 @@
+(function() {
+    function SpriteEvent(events) {
+        this.events = [];
+        if(events instanceof Array) {
+            this.events = this.events.concat(events);
+        } else if(events) {
+            this.events.push(events);
+        }
+    }    
+    
+    SpriteEvent.prototype.add = function(event) {
+        this.events.push(event);
+    };
+    
+    SpriteEvent.prototype.remove = function(event) {
+        for(var i = 0; i < this.events.length; i++) {
+            if(this.events[i] == event) {
+                return this.events.splice(i, 1);
+            }
+        }
+    };
+    
+    SpriteEvent.prototype.call = function() {
+        for(var i = 0; i < this.events.length; i++) {
+            this.events[i].apply(arguments[0], Array.prototype.slice.call(arguments, 1));
+        }
+    };
+    window.SpriteEvent = SpriteEvent;
+}());
+
 function Sprite(model, constructor) {    
 	model = model || {};	
     for(var i = 0; i < Sprite.DEFAULTS.r.length; i++) {
@@ -67,26 +97,26 @@ function Sprite(model, constructor) {
     ("this.stroke = model.stroke || 'rgba(0,0,0,0)';")
     ("this.hover = model.hover;")
     ("this.active = model.active;")
-	("this.onmouseclick = model.onmouseclick;")
-	("this.onmousedrag = model.onmousedrag;")
-	("this.onmousedown = model.onmousedown;")
-	("this.onmouseup = model.onmouseup;")
-	("this.onmousemove = model.onmousemove;")
-	("this.onmousein = model.onmousein;")
-	("this.onmouseout = model.onmouseout;")
-	("this.onmousemove = model.onmousemove;")
+	("this.onmouseclick = new SpriteEvent(model.onmouseclick);")
+	("this.onmousedrag = new SpriteEvent(model.onmousedrag);")
+	("this.onmousedown = new SpriteEvent(model.onmousedown);")
+	("this.onmouseup = new SpriteEvent(model.onmouseup);")
+	("this.onmousemove = new SpriteEvent(model.onmousemove);")
+	("this.onmousein = new SpriteEvent(model.onmousein);")
+	("this.onmouseout = new SpriteEvent(model.onmouseout);")
+	("this.onmousemove = new SpriteEvent(model.onmousemove);")
 	("this.collidesWith = model.collidesWith || {};")
 	("this.movement = model.movement || 's';")
 	("this.font = model.font || '10px \"Times New Roman\", sans-serif';")
 	("this.text = model.text || '';")
-	("this.onadd = model.onadd; //when i am added to something")
+	("this.onadd = new SpriteEvent(model.onadd); //when i am added to something")
 	("this.draggable = model.draggable || false;")
 	("this.ondrop = model.ondrop || {};")
     ("this.min = model.min;")
     ("this.max = model.max;")
     ("this.round = model.round;")
 	("this.holding = [];")
-    ("this.onchange = model.onchange;")
+    ("this.onchange = new SpriteEvent(model.onchange);")
     ("this.disabled = model.disabled;")
 	("this.visible = model.visible !== false && model.visible !== 0 ? 1 : model.visible;");
 
@@ -151,11 +181,11 @@ Sprite.prototype.draw = function(ctx) {
     			m = inverse(ctx.getTransform())
     			l = multiply(m, mouse.location);	
     			if(!this.ismousein && this.onmousein) {
-    				this.onmousein(l, mouse);
+    				this.onmousein.call(this, l, mouse);
     			}
     			this.ismousein = true;
     			if(mouse.request.drag && this.onmousedrag) {
-    				this.onmousedrag(l, multiply(m, mouse.lastlocation), mouse);
+    				this.onmousedrag.call(this, l, multiply(m, mouse.lastlocation), mouse);
     			}
     			if(mouse.request.down) {
     				if(this.draggable) {
@@ -167,7 +197,7 @@ Sprite.prototype.draw = function(ctx) {
     					this.oldLocation = this.location.slice(0);
     				}
     				if(this.onmousedown) {
-    					this.onmousedown(l, mouse);
+    					this.onmousedown.call(this, l, mouse);
     				}
     				mouse.downon.push(this); //for future click event
     			} else if(mouse.request.up) {
@@ -175,18 +205,18 @@ Sprite.prototype.draw = function(ctx) {
     					ctx.dragging.drop(this); //drop the draggable on this
     				}
     				if(this.onmouseup) {
-    					this.onmouseup(l, mouse);
+    					this.onmouseup.call(this, l, mouse);
     				}
     				if(this.onmouseclick && mouse.downon.contains(this)) {
-    					this.onmouseclick(l, mouse);
+    					this.onmouseclick.call(this, l, mouse);
     				}
     			}
     			if(mouse.request.move && this.onmousemove) {
-    				this.onmousemove(l, mouse);
+    				this.onmousemove.call(this, l, mouse);
     			}
     		} else if (this.ismousein) {
     			if(this.onmouseout) {
-    				this.onmouseout(l, mouse);
+    				this.onmouseout.call(this, l, mouse);
     			}
     			this.ismousein = false;
     		}
@@ -251,7 +281,7 @@ Sprite.prototype.add = function(o) {
 	o.parent = this;
 	this.sprites.push(o);
 	if(o.onadd) {
-		o.onadd(this);
+		o.onadd.call(o, this);
 	}
 	return this;
 };
@@ -390,15 +420,15 @@ COMPONENTS.slider = function() {
     this.priority = COMPONENTS.priority;
     var stroke = this.stroke != "rgba(0,0,0,0)" ? this.stroke : COMPONENTS.stroke, 
         fill = this.fill != "rgba(0,0,0,0)" ? this.fill : COMPONENTS.fill;
-    this.onadd = function(p) {
+    this.onadd.add(function(p) {
         this.width = p.width;
         this.height = p.height;
-    };
+    });
     this.fill = this.stroke = "rgba(0, 0, 0, 0)";
     var bar, slider, 
         position_range = Math.max(this.width, this.height) - Math.min(this.width, this.height),
         user_range = this.max - this.min;
-    this.onmousedrag = function(l1, l2, mouse) {
+    this.onmousedrag.add(function(l1, l2, mouse) {
         if(mouse.downon.contains(bar)) {
             var offset, last_offset, x = 0, y = 0;
             if(bar.width > bar.height) { //orientation = horizontal
@@ -420,11 +450,11 @@ COMPONENTS.slider = function() {
                 }
             }
             if(this.onchange && (value != old_value)) {                                
-                this.onchange((this.min || 0) + value, (this.min || 0) + old_value);
+                this.onchange.call(this, (this.min || 0) + value, (this.min || 0) + old_value);
             }
             slider.location = [x, y, 1];
         }
-    };
+    });
     var me = this;
     this.add(bar = new Sprite({
         location : this.location,
@@ -478,7 +508,7 @@ COMPONENTS.button = function() {
         stroke : color
     }));
     this.text = ""; 
-    this.onmousein = function(l, mouse) {
+    this.onmousein.add(function(l, mouse) {
         if(mouse.downon.contains(this)) {
             this.fill = (this.active || COMPONENTS.active).fill;
             this.stroke = (this.active || COMPONENTS.active).stroke;
@@ -486,15 +516,15 @@ COMPONENTS.button = function() {
             this.fill = (this.hover || COMPONENTS.hover).fill;
             this.stroke = (this.hover || COMPONENTS.hover).stroke;
         }
-    };
-    this.onmouseout = function() {
+    });
+    this.onmouseout.add(function() {
         this.fill = fill;
         this.stroke = stroke;        
-    };
-    this.onmousedown = function() {
+    });
+    this.onmousedown.add(function() {
         this.fill = (this.active || COMPONENTS.active).fill;
         this.stroke = (this.active || COMPONENTS.active).stroke;
-    };
+    });
 };
 
 var FONT = {
@@ -511,13 +541,13 @@ COMPONENTS.textbox = function() {
     this.stroke = stroke;
     this.fill = fill;    
     var text, width, reserve, inner_cvs, inner_x = 0, inner_y = 0;
-    this.onmousedrag = function(l, oldL) {
+    this.onmousedrag.add(function(l, oldL) {
         var o = offset(l, oldL);
         inner_x -= o[0];
         inner_y -= o[1];
         inner_x = Math.max(Math.min(inner_x, 0), Math.min(this.width - inner_cvs.width, 0));
         inner_y = Math.max(Math.min(inner_y, 0), Math.min(this.height - inner_cvs.height, 0));
-    };
+    });
     this.textHandler = function(ctx) {
         if(reserve != this.text || width != this.width) {            
             if(reserve != this.text) {
