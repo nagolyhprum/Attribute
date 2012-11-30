@@ -15,3 +15,12 @@ h4. TODO
 * User can opt out of take, drop and swap by returning false
 * Detect swap event
 * Optimize collision
+* Make another game
+* Prevent propagation
+    * Keep listening until disabled is encountered
+    * Disable all children if disabled
+    * Only allow top sprite to hear mouse
+    * Prevent propagation by returning false
+    * Propagation only goes to parent
+* Improve drag listener
+* Change textbox set text method

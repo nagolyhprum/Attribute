@@ -6,312 +6,48 @@
 		<script type="text/javascript" src="Utility.js"></script>
     	<script type="text/javascript" src="Robot.js"></script>
         <script type="text/javascript" src="Script.js"></script>
-		<script type="text/javascript">                 
-            var weapons = ["axe", "bigclub", "bow", "claw", "dagger", "halberd", "hammer"], 
-                index = 0, 
-                times = 3, 
-                speed = 50, 
-                c2d;                          
-            (function() {
-                
-                Sprite.FUNCTIONS["feet.onadd"] = function(p) {
-                    this.width = p.width / 2;
-                    this.height = p.height / 2;
-                    this.location = [this.width / 2, p.height - this.height, 1];
-                };
-                Sprite.FUNCTIONS["feet.collidesWith"] = {
-                    feet : function(feet) { 
-                        var p = feet.parent, pt = this.parent;
-                        p.location[0] -= p.dx * c2d.getTimeInterval();
-                        p.location[1] -= p.dy * c2d.getTimeInterval();
-                        pt.location[0] -= pt.dx * c2d.getTimeInterval();
-                        pt.location[1] -= pt.dy * c2d.getTimeInterval();
-                        p.dx = p.dy = pt.dx = pt.dy = 0;
-                    },
-                    "" : function() {}
-                };
-                //HUMAN FUNCTIONS
-                Sprite.FUNCTIONS["human.keys"] = {
-                    up : stdKey("dy", "up", -1),
-                    down : stdKey("dy", "down", 1),
-                    left : stdKey("dx", "left", -1),
-                    right : stdKey("dx", "right", 1),
-                    space : {
-                        press : function() {
-                            if(!this.isMoving()) {
-                                this.disabled = true;
-                                this.sprites[0].visible = false;
-                                this.sprites[1].visible = true;                     
-                                var name = this.sprites[0].sprites[0].animation.name;
-                                this.attack.location = this.location.slice();
-                                if(name == "up" || name == "down") {
-                                    this.attack.location[0] += this.attack.width / 2;
-                                }
-                                if(name == "left" || name == "right") {
-                                    this.attack.location[1] += this.attack.height / 2;                                
-                                }
-                                if(name == "right") {
-                                    this.attack.location[0] += this.attack.width;
-                                }
-                                if(name == "down") {
-                                    this.attack.location[1] += this.attack.height;
-                                }  
-                                if(name.indexOf("animation-") !== 0) {
-                                    name = "animation-" + name;
-                                }
-                                for(var i = 0; i < this.sprites[0].sprites.length; i++) {
-                                    this.sprites[1].sprites[i].animate(name);
-                                }  
-                                this.attack.visible = 1;
+        <script type="text/javascript" src="AddOns.js"></script>
+		<script type="text/javascript">                
+                c2d = new C2D("stage", function(c2d) {
+                    Preload([   
+                        Preload.STAGE,
+                        "animations_stage.xml",
+                        function() {
+                                c2d
+                                    .setStage("stage")
+                                    .start()
+                                    .getRobot()
+                                    .wait(5000)                    
+                                    .keyboard("down", 40)
+                                    .wait(2000)
+                                    .keyboard("up", 40)
+                                    .keyboard("down", 39)
+                                    .wait(1000)
+                                    .keyboard("up", 39)
+                                    .keyboard("down", 32)
+                                    .wait(1000)
+                                    .keyboard("up", 32)
+                                    .keyboard("down", 32)
+                                    .wait(1000)
+                                    .keyboard("up", 32)
+                                    .keyboard("down", 32)
+                                    .wait(1000)
+                                    .keyboard("up", 32)
+                                    .mouseToSprite("move", {id:"fullscreen"})
+                                    .wait(1000)
+                                    .mouseToSprite("down", {id:"fullscreen"})
+                                    .invoke(function(callback) {
+                                        callback();
+                                    })
+                                    .wait(1000)
+                                    .mouseToSprite("up", {id:"fullscreen"})
+                                    .invoke(function() {                        
+                                        c2d.runScript("animations_script.txt");
+                                    })
+                                    .start();
                             }
-                        }
-                    }
-                };
-                Sprite.FUNCTIONS["walkcycle.init"] = function() {
-    				addSprite(this, "BODY_male", "walkcycle_child");
-    				addSprite(this, "HEAD_plate_armor_helmet", "walkcycle_child");
-    				addSprite(this, "LEGS_plate_armor_pants", "walkcycle_child");
-    				addSprite(this, "TORSO_plate_armor_torso", "walkcycle_child");
-    				addSprite(this, "TORSO_plate_armor_arms_shoulders", "walkcycle_child");
-    				addSprite(this, "FEET_plate_armor_shoes", "walkcycle_child");
-    				addSprite(this, "HANDS_plate_armor_gloves", "walkcycle_child");
-    				addSprite(this, "WEAPON_shield_cutout_body", "walkcycle_child");
-    			};
-                Sprite.FUNCTIONS["slash.init"] = function() {
-    				addSprite(this, "BODY_human", "slash_child");
-    				addSprite(this, "HEAD_plate_armor_helmet", "slash_child");
-    				addSprite(this, "LEGS_plate_armor_pants", "slash_child");
-    				addSprite(this, "TORSO_plate_armor_torso", "slash_child");
-    				addSprite(this, "TORSO_plate_armor_arms_shoulders", "slash_child");
-    				addSprite(this, "FEET_plate_armor_shoes", "slash_child");
-    				addSprite(this, "HANDS_plate_armor_gloves", "slash_child");
-    				addSprite(this, "WEAPON_dagger", "slash_child");
-    			};
-                Sprite.FUNCTIONS["item_slot.onadd"] = function(p) {      
-                    var s = new Sprite("item");  
-                    s.drop(this);     
-                    p.add(s);
-                };
-                Sprite.FUNCTIONS["item.ondrop"] = {
-                    "item_slot" : function(item_slot) {
-                        this.location = item_slot.location.slice(0);
-                        this.stick();
-                    }
-                };
-                Sprite.FUNCTIONS["item.init"] = function() {
-                    var me = this;
-                    index++;
-                    img("images/resources/weapons/icon_" + weapons[0] + index + ".png", function(img) {
-                        me.image = img;
+                        ]);
                     });
-                    if((index = index % 3) == 0) {
-                        weapons.shift();
-                    }
-                };
-                Sprite.FUNCTIONS["dummy.animations"] = {
-                    spin : {
-                        sequence : H(1, 8, times),
-                        next: "stop"
-                    },
-                    stop : { sequence : [0] }
-                };
-                Sprite.FUNCTIONS["dummy.collidesWith"] = {human:function(){}};
-                Sprite.FUNCTIONS["dummy.init"] = function() { this.add("feet"); };
-                Sprite.FUNCTIONS["sub.animations(6)"] = animations(6);
-                Sprite.FUNCTIONS["sub.animations(9)"] = animations(9);
-                Sprite.FUNCTIONS["slider.onchange"] = function(v, lv) {
-                    DEBUG(this.id, ["New Value : ", v, ", Old Value : ", lv].join(""));
-                };
-                Sprite.FUNCTIONS["human.collidesWith"] = {dummy : function(){}};
-                Sprite.FUNCTIONS["human.onadd"] = function(p) {
-                    p.add(this.attack = new Sprite("attack"));
-                };
-                Sprite.FUNCTIONS["attack.collidesWith"] = {
-                    dummy : function(dummy) {
-                        if(dummy.animation.name != "spin") { dummy.animate("spin"); }
-                    }
-                };
-                Sprite.FUNCTIONS["fullscreen.onmouseclick"] = function() { c2d.fullScreen(); };
-                Sprite.FUNCTIONS["fullscreen.onadd"] = function(p) { this.location = [10, p.height - this.height - 10, 1]; };
-                Sprite.FUNCTIONS["inventory.onadd"] = function() {
-                    this.location = [this.parent.width - this.width - 1, 1, 1];
-                    for(var i = 0; i < 21; ) {
-                        for(var j = 1; j < 4; i++, j++) {
-                            var c = i % 3, r = Math.floor(i / 3);
-                            this.add(new Sprite("item_slot", function() {
-                                this.location = [c * 32 + (c + 1) * 10, r * 32 + (r + 1) * 10, 1];
-                            }));
-                        }
-                    }
-                };
-                Sprite.FUNCTIONS["screen.init"] = function() {                  
-                    var me = this;
-                    for(var i = 0; i < 10; i++) {
-                        for(var j = 0; j < 8; j++) {
-                            (function() {
-                                var location = [64 * i, 64 * j, 1];
-                                me.add(new Sprite("grass", function() {                            
-                                    this.location = location;
-                                }));
-                            }());
-                        }
-                    }  
-                };
-            }());
-            function animations(columns) {
-                return {
-            		"up" : {
-    					sequence : [0]
-    				},
-    				"animation-up" : {
-    					sequence : H(1, columns, times),
-                        next : next
-    				},
-    				"left" : {
-    					sequence : [columns]
-    				},
-    				"animation-left" : {
-    					sequence : H(columns + 1, columns * 2, times),
-                        next : next
-    				},
-    				"down" : {
-    					sequence : [columns * 2]
-    				},
-    				"animation-down" :  {
-    					sequence : H(columns * 2 + 1, columns * 3, times),
-                        next : next
-    				},
-    				"right" : {
-    					sequence : [columns * 3]
-    				},
-    				"animation-right" :  {
-    					sequence : H(columns * 3 + 1, columns * 4, times),
-                        next : next                    
-				    }
-                };
-            }
-            function next() {
-                var p = this.parent.parent;
-                p.attack.visible = 0;
-                p.disabled = false;
-                p.sprites[0].visible = true;
-                p.sprites[1].visible = false;
-            }
-            function stdKey(x_or_y, direction, sign) {
-               return {
-                    press : function() {
-                        this.keys[direction].down.call(this, direction);
-                    },
-                    down : function() {
-                        if(this.sprites[0].sprites[0].animation.name.indexOf("animation-") != 0) {
-                            this[x_or_y] += sign * speed;
-                            for(var i = 0; i < this.sprites[0].sprites.length; i++) {
-                                this.sprites[0].sprites[i].animate("animation-" + direction);
-                            }
-                        }
-                    },
-                    up : function() {
-                        var name = this.sprites[0].sprites[0].animation.name;
-                        if(name.indexOf(direction) != -1) {
-                            this[x_or_y] = 0;                    
-                            for(var i = 0; i < this.sprites[0].sprites.length; i++) {
-                                this.sprites[0].sprites[i].animate(direction);
-                            }
-                        }
-                    }
-                };
-            }
-			function addSprite(sprite, image, model) {
-				sprite.add(new Sprite(model, function() {
-                    var me = this;
-                    img(me.type + image + ".png", function(img) {
-                        me.image = img;              
-                        me.width = me.image.width / me.columns;
-                        me.height = me.image.height / me.rows;      
-                        me.animate("down");
-                    })
-                }));                
-			}            
-            Preload([
-                Preload.SPRITE,
-                "sprite.json",     
-                function() {                                 
-                	c2d = new C2D("screen", function(c2d) {
-                        c2d.setScreen("s", 
-                            new Sprite("screen").add("inventory")
-                                .add("dummy")
-                                .add(new Sprite("human", function() {
-                    				this.add("walkcycle");
-                                    this.add("slash");
-                                    this.add("feet");
-                    			}))
-                                .add(new Sprite("slider", function() {
-                                    this.location = [100, 450];
-                                    this.width = 100;
-                                    this.height = 20;  
-                                }))
-                                .add(new Sprite("slider", function() {
-                                    this.width = 20;
-                                    this.height = 100;
-                                    this.location = [210, 370];
-                                    this.min = -2;
-                                    this.max = 3;      
-                                    this.round = Math.round;
-                                }))
-                                .add(new Sprite("slider", function() {
-                                    this.width = 20;
-                                    this.height = 100;
-                                    this.location = [240, 370];
-                                    this.min = -50;
-                                    this.max = 50;
-                                    this.round = step(10);
-                                }))
-                                .add("fullscreen")
-                                .add(new Sprite("slider", function() {
-                                    this.width = 300;                    
-                                    this.height = 20;
-                                    this.min = 0;
-                                    this.max = 300;
-                                    this.round = Math.round;
-                                    this.location = [300, 320, 1];
-                                    this.onchange = function(val) {
-                                        var tb = c2d.find({component : "textbox"})[0];
-                                        tb.width = val;
-                                    };
-                                }))
-                                .add("textbox")
-                        ).start().getRobot()
-                            .wait(5000)                    
-                            .keyboard("down", 40)
-                            .wait(2000)
-                            .keyboard("up", 40)
-                            .keyboard("down", 39)
-                            .wait(1000)
-                            .keyboard("up", 39)
-                            .keyboard("down", 32)
-                            .wait(1000)
-                            .keyboard("up", 32)
-                            .keyboard("down", 32)
-                            .wait(1000)
-                            .keyboard("up", 32)
-                            .keyboard("down", 32)
-                            .wait(1000)
-                            .keyboard("up", 32)
-                            .mouseToSprite("move", {id:"fullscreen"})
-                            .wait(1000)
-                            .mouseToSprite("down", {id:"fullscreen"})
-                            .invoke(function(callback) {
-                                callback();
-                            })
-                            .wait(1000)
-                            .mouseToSprite("up", {id:"fullscreen"})
-                            .invoke(function() {                        
-                                c2d.runScript("script.txt");
-                            })
-                            .start();
-        			});
-                }
-            ]);
 		</script>
         <style type="text/css">
             td {
@@ -323,7 +59,7 @@
         </style>
 	</head>
 	<body>
-		<canvas id="screen">Canvas not supported.</canvas>
+		<canvas id="stage">Canvas not supported.</canvas>
         <table>
             <tr>
                 <td></td>

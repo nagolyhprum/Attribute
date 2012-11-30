@@ -17,6 +17,7 @@
 			var ds = new Sprite({
 				width : 540,
 				height : 380,
+                dr : Math.PI / 360,
 				location : [50, 50],
 				sx : 1,
 				sy : 1,
@@ -117,9 +118,7 @@
 				stroke : "yellow"
 			}))*/;		
 			var cvs = new C2D("screen", function() {
-				cvs.setScreen("scene", ds);
-				cvs.fullScreen();
-				cvs.start();
+				cvs.setScreen("scene", ds).fullScreen().start();
 			});
 		</script>
 	</head>

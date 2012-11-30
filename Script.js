@@ -11,7 +11,7 @@
         this.using = null;
         this.variables = {};
         this.i = 0;
-        ajax({
+        Utility.ajax({
             src : src,
             success : function(data) {
                 var lines = data.split("\n");

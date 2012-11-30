@@ -1,0 +1,247 @@
+<?xml version="1.0"?>
+<attribute>
+    <functions>
+        <feet>
+            <onadd args="p">                
+                    this.width = p.width / 2;
+                    this.height = p.height / 2;
+                    this.location = [this.width / 2, p.height - this.height, 1];
+            </onadd>
+            <collidesWith>
+                <feet args="feet">
+                    var p = feet.parent, pt = this.parent;
+                    p.location[0] -= p.dx * c2d.getTimeInterval();
+                    p.location[1] -= p.dy * c2d.getTimeInterval();
+                    pt.location[0] -= pt.dx * c2d.getTimeInterval();
+                    pt.location[1] -= pt.dy * c2d.getTimeInterval();
+                    p.dx = p.dy = pt.dx = pt.dy = 0;                    
+                </feet>
+                <ALL/>
+            </collidesWith>
+        </feet>
+        <human>
+            <init>                
+        		this.add("walkcycle");
+                this.add("slash");
+                this.add("feet");
+            </init>            
+            <keys>
+                <up call="stdKey" args="dy,up,-1" types="SSN"></up>
+                <right call="stdKey" args="dx,right,1" types="SSN"></right>
+                <down call="stdKey" args="dy,down,1" types="SSN"></down>
+                <left call="stdKey" args="dx,left,-1" types="SSN"></left>
+                <space>
+                    <press>         
+                        if(!this.isMoving()) {
+                            this.disabled = true;
+                            this.sprites[0].visible = false;
+                            this.sprites[1].visible = true;                     
+                            var name = this.sprites[0].animation.name;
+                            this.attack.location = this.location.slice();
+                            if(name == "up" || name == "down") {
+                                this.attack.location[0] += this.attack.width / 2;
+                            }
+                            if(name == "left" || name == "right") {
+                                this.attack.location[1] += this.attack.height / 2;                                
+                            }
+                            if(name == "right") {
+                                this.attack.location[0] += this.attack.width;
+                            }
+                            if(name == "down") {
+                                this.attack.location[1] += this.attack.height;
+                            }  
+                            if(name.indexOf("animation-") !== 0) {
+                                name = "animation-" + name;
+                            }
+                            this.sprites[1].animate(name);
+                            this.attack.visible = 1;
+                        }
+                    </press>
+                </space>
+            </keys>
+            <collidesWith>
+                <dummy/>
+            </collidesWith>
+            <onadd args="p">                
+                p.add(this.attack = new Sprite("attack"));
+            </onadd>
+        </human>
+        <fullscreen>
+            <onmouseclick>
+                c2d.fullScreen();
+            </onmouseclick>
+            <onadd args="p">
+                this.location = [10, p.height - this.height - 10, 1];
+            </onadd>
+        </fullscreen>
+        <attack>
+            <collidesWith>
+                <dummy args="dummy">                    
+                    if(dummy.animation.name != "spin") { dummy.animate("spin"); }
+                </dummy>
+            </collidesWith>
+        </attack>
+        <walkcycle>
+            <init>                
+                this.image = [];
+                this.loaded = 0;
+    			addImage(this, "BODY_male", "walkcycle_child", 0);
+				addImage(this, "HEAD_plate_armor_helmet", "walkcycle_child", 1);
+				addImage(this, "LEGS_plate_armor_pants", "walkcycle_child", 2);
+				addImage(this, "TORSO_plate_armor_torso", "walkcycle_child", 3);
+				addImage(this, "TORSO_plate_armor_arms_shoulders", "walkcycle_child", 4);
+				addImage(this, "FEET_plate_armor_shoes", "walkcycle_child", 5);
+				addImage(this, "HANDS_plate_armor_gloves", "walkcycle_child", 6);
+				addImage(this, "WEAPON_shield_cutout_body", "walkcycle_child", 7);
+            </init>
+        </walkcycle>
+        <slash>
+            <init>
+                this.image = [];
+                this.loaded = 0;
+    			addImage(this, "BODY_human", "slash_child", 0);
+    			addImage(this, "HEAD_plate_armor_helmet", "slash_child", 1);
+    			addImage(this, "LEGS_plate_armor_pants", "slash_child", 2);
+    			addImage(this, "TORSO_plate_armor_torso", "slash_child", 3);
+    			addImage(this, "TORSO_plate_armor_arms_shoulders", "slash_child", 4);
+    			addImage(this, "FEET_plate_armor_shoes", "slash_child", 5);
+    			addImage(this, "HANDS_plate_armor_gloves", "slash_child", 6);
+    			addImage(this, "WEAPON_dagger", "slash_child", 7);
+            </init>
+        </slash>        
+        <item_slot>
+            <onadd args="p">                   
+                var s = new Sprite("item");  
+                s.index = this.index;
+                s.drop(this);     
+                p.add(s);
+            </onadd>
+        </item_slot>
+        <item>
+            <ondrop>
+                <item_slot args="item_slot">                    
+                    this.location = item_slot.location.slice(0);
+                    this.stick();
+                </item_slot>
+            </ondrop>
+            <onadd>                
+                var me = this;
+                Utility.img("images/resources/weapons/icon_" + weapons[Math.floor(this.index / 3)] + ((this.index % 3) + 1) + ".png", function(img) {
+                    me.image = [img];
+                    me.image.complete = 1;
+                });
+                this.index = 0;
+            </onadd>
+        </item>
+        <dummy>
+            <collidesWith>
+                <human/>
+            </collidesWith>
+            <animations>
+                <spin>
+                    <sequence call="Utility.H" args="1,8,times" types="NNV"></sequence>
+                    <next type="S">"stop"</next>
+                </spin>
+                <stop>
+                    <sequence type="A">[0]</sequence>
+                </stop>
+            </animations>
+            <init>
+                this.add("feet");
+            </init>
+        </dummy>
+        <sub>
+            <animations6 call="animations" args="6" types="N"></animations6>
+            <animations9 call="animations" args="9" types="N"></animations9>
+        </sub>
+        <slider>
+            <onchange args="v,lv">                
+                DEBUG(this.id, ["New Value : ", v, ", Old Value : ", lv].join(""));
+            </onchange>
+        </slider>
+        <inventory>
+            <init>                
+                this.location = [640 - this.width - 1, 1, 1];
+                var model = new Sprite("item_slot");
+                model.index = -1;
+                for(var i = 0; i &lt; 21; ) {
+                    for(var j = 1; j &lt; 4; i++, j++) {
+                        model.index++;
+                        this.add(new Sprite(model, function() {
+                            var c = this.index % 3, r = Math.floor(this.index / 3);
+                            this.location = [c * 32 + (c + 1) * 10, r * 32 + (r + 1) * 10, 1];
+                        }));
+                    }
+                }
+            </init>
+        </inventory>
+        <stage>
+            <init>                              
+                var me = this;
+                for(var i = 0; i &lt; 10; i++) {
+                    for(var j = 0; j &lt; 8; j++) {
+                        (function() {
+                            var location = [64 * i, 64 * j, 1];
+                            me.add(new Sprite("grass", function() {                            
+                                this.location = location;
+                            }));
+                        }());
+                    }
+                }  
+            </init>
+        </stage>
+        <constructors>
+            <slider1>
+                this.location = [100, 450];
+                this.width = 100;
+                this.height = 20;  
+            </slider1>
+            <slider2>
+                this.width = 20;
+                this.height = 100;
+                this.location = [210, 370];
+                this.min = -2;
+                this.max = 3;      
+                this.round = Math.round;                                        
+            </slider2>
+            <slider3>
+                this.width = 20;
+                this.height = 100;
+                this.location = [240, 370];
+                this.min = -50;
+                this.max = 50;
+                this.round = Utility.step(10);                                        
+            </slider3>
+            <slider4>
+                this.width = 300;                    
+                this.height = 20;
+                this.min = 0;
+                this.max = 300;
+                this.round = Math.round;
+                this.location = [300, 320, 1];
+                this.onchange = function(val) {
+                    var tb = c2d.find({component : "textbox"})[0];
+                    tb.width = val;
+                };
+            </slider4>
+        </constructors>
+    </functions>
+    <preload>    
+        SPRITE
+        animations_sprite.json
+    </preload>
+    <stages>        
+        <stage name="stage">
+            <human/>
+            <inventory/>
+            <dummy/>
+            <slider-slider1/>
+            <slider-slider2/>
+            <slider-slider3/>
+            <slider-slider4/>
+            <slider/>
+            <fullscreen/>
+            <textbox/>
+        </stage>        
+    </stages>
+</attribute>
