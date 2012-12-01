@@ -16,8 +16,8 @@
             me.livemouse.request.drag = true;
         } else {
             me.livemouse.location = Utility.getMouseLocation(e);
+            me.livemouse.request.move = true;
         }
-        me.livemouse.request.move = true;
     }
 
     function mouseupdown(e, d, me) {
@@ -276,7 +276,6 @@
                         }
                     }
                 }
-                DEBUG("ID", Sprite.ID);
                 //process mouse
                 me.deadmouse = {
                     request: {
@@ -340,7 +339,14 @@
         C2D.prototype.isSupported = true;
 
         C2D.prototype.find = function (model) {
-            return this.stages[this.activeStage].find(model, []);
+            var stage = this.stages[this.activeStage], r = stage.find(model, []), f = model;
+            if(typeof f !== "function") {
+                f = Utility.object_is_model;
+            }
+            if(f(stage, model)) {
+                r.push(stage);
+            }
+            return r;
         };
         C2D.prototype.measureText = function (text) {
             this.ctx.font = this.font;

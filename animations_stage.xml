@@ -156,7 +156,7 @@
         </sub>
         <slider>
             <onchange args="v,lv">                
-                DEBUG(this.id, ["New Value : ", v, ", Old Value : ", lv].join(""));
+                DEBUG(this.id, ["New Value : ", v, ", Old Value : ", lv].join(""));                
             </onchange>
         </slider>
         <inventory>
@@ -222,6 +222,7 @@
                 this.onchange = function(val) {
                     var tb = c2d.find({component : "textbox"})[0];
                     tb.width = val;
+                    tb.setText();
                 };
             </slider4>
         </constructors>
@@ -230,18 +231,20 @@
         SPRITE
         animations_sprite.json
     </preload>
-    <stages>        
-        <stage name="stage">
-            <human/>
-            <inventory/>
-            <dummy/>
-            <slider-slider1/>
-            <slider-slider2/>
-            <slider-slider3/>
-            <slider-slider4/>
-            <slider/>
-            <fullscreen/>
-            <textbox/>
-        </stage>        
+    <stages>       
+        <c2d>
+            <stage name="stage">
+                <human/>
+                <inventory/>
+                <dummy/>
+                <slider-slider1/>
+                <slider-slider2/>
+                <slider-slider3/>
+                <slider-slider4/>
+                <slider/>
+                <fullscreen/>
+                <textbox/>
+            </stage>     
+        </c2d>
     </stages>
 </attribute>

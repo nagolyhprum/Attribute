@@ -506,7 +506,13 @@
                             loadStage.Preload(c[i].childNodes[0].nodeValue, func);
                             break;
                         case "stages":
-                            loadStage.Stages(c[i], func);
+                            var d = c[i].childNodes;
+                            for(var j = 0; j < d.length; j++) {
+                                if(d[j].nodeType == TYPE.E) {                            
+                                    var c2d = window[d[j].nodeName];
+                                    loadStage.Stages(d[j], func, 0, c2d);
+                                }
+                            }
                             break;
                         default:
                             throw "Unrecognized tag group " + c[i].nodeName + ".";
@@ -581,7 +587,7 @@
         }       
     };
     
-    loadStage.Stages = function(stages, callback, parent) {
+    loadStage.Stages = function(stages, callback, parent, c2d) {
         var sprite, c = stages.childNodes, n;
         for(var i = 0; i < c.length; i++) {
             n = c[i];
@@ -593,10 +599,10 @@
                 if(parent) {
                     parent.add(sprite);
                 }
-                loadStage.Stages(n, callback, sprite);
+                loadStage.Stages(n, callback, sprite, c2d);
             }
         }
-        if(stages.nodeName.toLowerCase() === "stages") {
+        if(!parent) {
             callback();
         }
     };

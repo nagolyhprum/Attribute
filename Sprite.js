@@ -108,7 +108,6 @@
     	("this.dr = model.dr || 0;")
     	("this.sx = model.sx || 1;")
     	("this.sy = model.sy || 1;")    
-        ("this.textHandler = model.textHandler;") //this should change if possible
         ("this.animation = {};")
     	("this.limit = model.limit || (1 / 0);")
     	("this.rows = model.rows || 1;")
@@ -132,7 +131,6 @@
     	("this.onmousemove = new SpriteEvent(Sprite.FUNCTIONS[model.onmousemove] || model.onmousemove);")
     	("this.onmousein = new SpriteEvent(Sprite.FUNCTIONS[model.onmousein] || model.onmousein);")
     	("this.onmouseout = new SpriteEvent(Sprite.FUNCTIONS[model.onmouseout] || model.onmouseout);")
-    	("this.onmousemove = new SpriteEvent(Sprite.FUNCTIONS[model.onmousemove] || model.onmousemove);")
     	("this.collidesWith = Sprite.FUNCTIONS[model.collidesWith] || model.collidesWith || {};")
     	("this.movement = model.movement || 's';")
     	("this.font = model.font || '10px \"Times New Roman\", sans-serif';")
@@ -147,6 +145,7 @@
         ("this.onchange = new SpriteEvent(Sprite.FUNCTIONS[model.onchange] || model.onchange);")
         ("this.disabled = model.disabled;")
     	("this.visible = model.visible !== false && model.visible !== 0 ? 1 : model.visible;")
+        ("this.onswap = model.onswap || {};")
         ("this.id = model.id || Sprite.ID++");    
     
     Sprite.prototype.animate = function(name) {
@@ -178,26 +177,22 @@
     			ctx.strokeStyle = this.stroke;
     			ctx.roundRect(-this.width / 2, -this.height / 2, this.width, this.height, this.borderradius);	
     		}
-    		if(this.text) {
-                if(this.textHandler) {
-                    this.textHandler(ctx);
-                } else {         
-            		ctx.font = this.font;
-            		ctx.textBaseline = "middle";
-            		ctx.textAlign = "center";
-            		ctx.fillStyle = this.fill;
-            		ctx.strokeStyle = this.stroke;		
-            		var cx = 0, cy = 0, p = this.parent;
-            		if(p) {
-            			cx = p.width / 2;
-            			cy = p.height / 2;
-            		} else {
-            			cx = ctx.canvas.width / 2;
-            			cy = ctx.canvas.height / 2;
-            		}
-            		ctx.strokeText(this.text, -this.width / 2 + cx, -this.height / 2 + cy, cx * 2);
-            		ctx.fillText(this.text, -this.width / 2 + cx, -this.height / 2 + cy, cx * 2);
-                }
+    		if(this.text) {     
+        		ctx.font = this.font;
+        		ctx.textBaseline = "middle";
+        		ctx.textAlign = "center";
+        		ctx.fillStyle = this.fill;
+        		ctx.strokeStyle = this.stroke;		
+        		var cx = 0, cy = 0, p = this.parent;
+        		if(p) {
+        			cx = p.width / 2;
+        			cy = p.height / 2;
+        		} else {
+        			cx = ctx.canvas.width / 2;
+        			cy = ctx.canvas.height / 2;
+        		}
+        		ctx.strokeText(this.text, -this.width / 2 + cx, -this.height / 2 + cy, cx * 2);
+        		ctx.fillText(this.text, -this.width / 2 + cx, -this.height / 2 + cy, cx * 2);                
     		}
             if(this.clips) {
     			ctx.beginPath();
@@ -215,7 +210,7 @@
         				this.onmousein.call(this, l, mouse);
         			}
         			this.ismousein = true;
-        			if(mouse.request.drag && this.onmousedrag) {
+        			if(mouse.request.drag && this.onmousedrag && mouse.downon.contains(this)) {
         				this.onmousedrag.call(this, l, Matrix.multiply(m, mouse.lastlocation), mouse);
         			}
         			if(mouse.request.down) {
@@ -342,11 +337,11 @@
     Sprite.prototype.collision = function(sprite) {
     	var s = this.sprites;
     	for(var i = 0; i < s.length && (!sprite || !i); i++) {
-    		for(var j = sprite ? 0 : (i + 1); j < s.length; j++) {
+    		for(var j = sprite ? 0 : (i + 1); j < s.length; j++) {   
     			var s1 = sprite || s[i], s2 = s[j], 
     				c1 = s1.collidesWith[s2.type] || s1.collidesWith["ALL"], 
     				c2 = s2.collidesWith[s1.type] || s2.collidesWith["ALL"];
-    			if((s1.movement == "d" || s2.movement == "d") && (c1 || c2) && (s1.visible && !s1.disabled && s2.visible && !s2.disabled)) {
+    			if((s1.movement == "d" || s2.movement == "d") && (c1 || c2) && (s1.visible && !s1.disabled && s2.visible && !s2.disabled)) {                                 
     				var p1 = s1.points || s1.getTransformedPoints(), p2 = s2.points || s2.getTransformedPoints(), intersects = false;
     				for(var k = 0; !intersects && k < p1.length; k++) {
     					for(var l = 0; !intersects && l < p2.length; l++) {
@@ -381,24 +376,32 @@
         		this.droppable = s;
         		(b !== 0) && (b !== false) && (d.call(this, s) || 1);
                 return 1;
-        	} else if(b !== 0 && b !== false && s.limit > 0 && s.swap) {
+        	} else if(b !== 0 && b !== false && s.limit > 0 && s.swaps) {
                 return this.swap(s.holding[0]);            
         	}
         }
     };
     
     Sprite.prototype.swap = function(other_draggable) {
-        var others_droppable = this.droppable, 
-            this_droppable = other_draggable.droppable;
-        if(other_draggable && others_droppable) {
-            var other_ondrop = other_draggable.ondrop[others_droppable.type] || other_draggable.ondrop["ALL"],
-                this_ondrop = this.ondrop[this_droppable.type] || this.ondrop["ALL"];
-            if(other_ondrop && this_ondrop) {
-                other_draggable.take();
-                this.take();
-                other_draggable.drop(others_droppable);
-                this.drop(this_droppable);
-                return 1;
+        if(this !== other_draggable) {
+            var others_droppable = this.droppable, 
+                this_droppable = other_draggable.droppable;
+            if(other_draggable && others_droppable) {
+                var other_ondrop = other_draggable.ondrop[others_droppable.type] || other_draggable.ondrop["ALL"],
+                    this_ondrop = this.ondrop[this_droppable.type] || this.ondrop["ALL"];
+                if(other_ondrop && this_ondrop) {
+                    other_draggable.take();
+                    this.take();
+                    other_draggable.drop(others_droppable);
+                    this.drop(this_droppable);
+                    if(this.onswap[other_draggable.type]) {
+                        this.onswap[other_draggable.type].call(this, other_draggable);
+                    }
+                    if(other_draggable.onswap[this.type]) {
+                        other_draggable.onswap[this.type].call(other_draggable, this);
+                    }
+                    return 1;
+                }
             }
         }
     };
@@ -578,152 +581,153 @@
             fill = this.fill != "rgba(0,0,0,0)" ? this.fill : COMPONENTS.fill;
         this.stroke = stroke;
         this.fill = fill;    
-        var text, width, reserve, inner_cvs, inner_x = 0, inner_y = 0;
+        var inner_cvs = new Sprite({
+            init : function() {            
+                this.image = [document.createElement("canvas")];
+            }
+        }), inner_x = 0, inner_y = 0, reserve;
+        this.add(inner_cvs);
         this.onmousedrag.add(function(l, oldL) {
             var o = Utility.offset(l, oldL);
             inner_x -= o[0];
             inner_y -= o[1];
             inner_x = Math.max(Math.min(inner_x, 0), Math.min(this.width - inner_cvs.width, 0));
             inner_y = Math.max(Math.min(inner_y, 0), Math.min(this.height - inner_cvs.height, 0));
+            inner_cvs.location = [inner_x, inner_y, 1];
         });
-        this.textHandler = function(ctx) {
-            if(reserve != this.text || width != this.width) {            
-                if(reserve != this.text) {
-                    reserve = this.text;            
-                }
-                text = reserve.slice(0);
-                width = this.width;
-                var roomLeft = width;
-                for(var i = 0; i < text.length && ((i + 1) % 200 || confirm("Continue?")); i++) {                
-                    var t = text[i];
-                    if(t.content) {
-                        text[i] = t = {
-                            color : t.color,
-                            content : t.content,
+        this.setText = function(text) {
+            this.text = 0;
+            reserve = text || reserve;
+            text = reserve.slice(0);
+            var ctx = inner_cvs.image[0].getContext("2d"), roomLeft = this.width, width = roomLeft;
+            for(var i = 0; i < text.length && ((i + 1) % 200 || confirm("Continue?")); i++) {                
+                var t = text[i];
+                if(t.content) {
+                    text[i] = t = {
+                        color : t.color,
+                        content : t.content,
+                        font : t.font,
+                        size : t.size,
+                        style : t.style,
+                        family : t.family,
+                        weight : t.weight
+                    };
+                    t.size = t.size || FONT.size;
+                    if(!t.font) {
+                        t.font = [
+                            t.style || FONT.style, 
+                            t.weight || FONT.weight, 
+                            (t.size || FONT.size) + "px", 
+                            t.family || FONT.family                            
+                        ].join(" ");
+                    }
+                    var io = t.content.indexOf("\n");                
+                    if(io != -1) {
+                        text.splice(i + 1, 0, "\n", {
                             font : t.font,
-                            size : t.size,
-                            style : t.style,
-                            family : t.family,
-                            weight : t.weight
-                        };
-                        t.size = t.size || FONT.size;
-                        if(!t.font) {
-                            t.font = [
-                                t.style || FONT.style, 
-                                t.weight || FONT.weight, 
-                                (t.size || FONT.size) + "px", 
-                                t.family || FONT.family                            
-                            ].join(" ");
-                        }
-                        var io = t.content.indexOf("\n");                
-                        if(io != -1) {
-                            text.splice(i + 1, 0, "\n", {
-                                font : t.font,
-                                color : t.color,
-                                content : t.content.substring(io + 1)
-                            });                    
-                            t.content = t.content.substring(0, io);
-                        }  
-                        ctx.font = t.font;
-                        t.width = ctx.measureText(t.content).width;
-                        roomLeft -= t.width;
-                        if(roomLeft < 0) {
-                            var nextLine = "", removed = 0, io = t.content.lastIndexOf(" ");
-                            if(io == -1) { //if there are no spaces -- a word all by itself
-                                if(i > 0 && text[i - 1] != "\n") { //if this has content before
+                            color : t.color,
+                            content : t.content.substring(io + 1),
+                            size : t.size
+                        });                    
+                        t.content = t.content.substring(0, io);
+                    }  
+                    ctx.font = t.font;
+                    t.width = ctx.measureText(t.content).width;
+                    roomLeft -= t.width;
+                    if(roomLeft < 0) {
+                        var nextLine = "", removed = 0, io = t.content.lastIndexOf(" ");
+                        if(io == -1) { //if there are no spaces -- a word all by itself
+                            if(i > 0 && text[i - 1] != "\n") { //if this has content before
+                                text.splice(i--, 0, "\n");
+                            } else { //otherwise separate it from the content after
+                                text.splice(i + 1, 0, "\n");                                
+                            }
+                        } else {
+                            while(roomLeft + removed < 0 && t.content) { //while there are spaces and no room                                                        
+                                nextLine = t.content.substring(io) + nextLine; //move to next line
+                                t.content = t.content.substring(0, io); //remove
+                                removed = ctx.measureText(nextLine).width; //determine space removed
+                                io = t.content.lastIndexOf(" ") || 0; //get the next space
+                            }
+                            if(t.content) { //if i did not remove everything 
+                                text.splice(i + 1, 0, "\n", {
+                                    content : nextLine,
+                                    font : t.font,
+                                    size : t.size,
+                                    color : t.color
+                                });
+                            } else { //if everything was removed
+                                if(i > 0 && text[i - 1] != "\n") { //if this is not separated from the content before
+                                    t.content = nextLine;
                                     text.splice(i--, 0, "\n");
-                                } else { //otherwise separate it from the content after
-                                    text.splice(i + 1, 0, "\n");                                
-                                }
-                            } else {
-                                while(roomLeft + removed < 0 && t.content) { //while there are spaces and no room                                                        
-                                    nextLine = t.content.substring(io) + nextLine; //move to next line
-                                    t.content = t.content.substring(0, io); //remove
-                                    removed = ctx.measureText(nextLine).width; //determine space removed
-                                    io = t.content.lastIndexOf(" ") || 0; //get the next space
-                                }
-                                if(t.content) { //if i did not remove everything 
-                                    text.splice(i + 1, 0, "\n", {
-                                        content : nextLine,
-                                        font : t.font,
-                                        size : t.size,
-                                        color : t.color
-                                    });
-                                } else { //if everything was removed
-                                    if(i - 1 > 0 && text[i - 1] != "\n") { //if this is not separated from the content before
-                                        t.content = nextLine;
-                                        text.splice(i--, 0, "\n");
+                                } else {
+                                    var io = nextLine.indexOf(" ", 1);
+                                    if(io != -1) {
+                                        t.content = nextLine.substring(0, io);
+                                        text.splice(i + 1, 0, "\n", {
+                                            font : t.font,
+                                            color : t.color,
+                                            content : nextLine.substring(io),
+                                            size : t.size
+                                        });
                                     } else {
-                                        var io = nextLine.indexOf(" ", 1);
-                                        if(io != -1) {
-                                            t.content = nextLine.substring(0, io);
-                                            text.splice(i + 1, 0, "\n", {
-                                                font : t.font,
-                                                color : t.color,
-                                                content : nextLine.substring(io)
-                                            });
-                                        } else {
-                                            t.content = nextLine;
-                                        }
+                                        t.content = nextLine;
                                     }
                                 }
                             }
                         }
-                        t.width = ctx.measureText(t.content).width;
-                    } else if(t == "\n") {
-                        roomLeft = width;                    
-                    }                
-                }            
-                var max_width = 0, current_width = 0, j = 0, total_height = 0, heights = [];
-                for(i = 0; i < text.length; i++) {
-                    if(text[i].content) {
-                        current_width += text[i].width;
-                        if(text[i].size > heights[j] || !heights[j]) {
-                            total_height += (heights[j] = text[i].size);
-                        }
-                    } else if(text[i] == "\n") {
-                        while((i + 1 < text.length && text[i + 1].content && !(text[i + 1].content = text[i + 1].content.replace(/^\s*/, "")))
-                            || text[i + 1] == "\n") {
-                            text.splice(i + 1, 1);
-                        }
-                        if(max_width < current_width) {
-                            max_width = current_width;
-                        }
-                        current_width = 0;
-                        j++;
                     }
-                }
-                if(max_width < current_width) {
-                    max_width = current_width;
-                }
-                inner_cvs = document.createElement("canvas");
-                inner_cvs.width = max_width;
-                inner_cvs.height = total_height;
-                var inner_ctx = inner_cvs.getContext("2d"), line = 0, x = 0, y = heights[line++];      
-                inner_ctx.textBaseline = "bottom";
-        		inner_ctx.textAlign = "left";            
-                for(var i = 0; i < text.length; i++) {
-                    var t = text[i];
-                    if(t.content) {
-                        inner_ctx.font = t.font;
-                        inner_ctx.fillStyle = t.color || FONT.color;
-                        inner_ctx.strokeStyle = t.color || FONT.color;
-                        inner_ctx.strokeText(t.content, x, y - (heights[line - 1] - t.size) / 4);
-                        inner_ctx.fillText(t.content, x, y - (heights[line - 1] - t.size) / 4);
-                        x += t.width;
-                    } else if(t == "\n") {
-                        x = 0;
-                        y += heights[line++] || 0;
-                    }
-                }      
-                inner_x = inner_y = 0;
+                    t.width = ctx.measureText(t.content).width;
+                } else if(t == "\n") {
+                    roomLeft = width;                    
+                }        
             }
-    		ctx.beginPath();
-    		ctx.rect(-this.width / 2, -this.height / 2, this.width, this.height);
-    		ctx.clip();
-    		ctx.closePath();
-            ctx.drawImage(inner_cvs, inner_x - this.width / 2, inner_y - this.height / 2);
+            var max_width = 0, current_width = 0, j = 0, total_height = 0, heights = [];
+            for(i = 0; i < text.length; i++) {
+                if(text[i].content) {
+                    current_width += text[i].width;
+                    if(text[i].size > heights[j] || !heights[j]) {
+                        total_height += (heights[j] = text[i].size);
+                    }
+                } else if(text[i] == "\n") {
+                    while((i + 1 < text.length && text[i + 1].content && !(text[i + 1].content = text[i + 1].content.replace(/^\s*/, "")))
+                        || text[i + 1] == "\n") {
+                        text.splice(i + 1, 1);
+                    }
+                    if(max_width < current_width) {
+                        max_width = current_width;
+                    }
+                    current_width = 0;
+                    j++;
+                }
+            }
+            if(max_width < current_width) {
+                max_width = current_width;
+            }
+            inner_cvs.width = inner_cvs.image[0].width = max_width;
+            inner_cvs.height = inner_cvs.image[0].height = total_height;
+            var line = 0, x = 0, y = heights[line++];      
+            ctx.textBaseline = "bottom";
+    		ctx.textAlign = "left";            
+            for(var i = 0; i < text.length; i++) {
+                var t = text[i];
+                if(t.content) {
+                    ctx.font = t.font;
+                    ctx.fillStyle = t.color || FONT.color;
+                    ctx.strokeStyle = t.color || FONT.color;
+                    ctx.strokeText(t.content, x, y - (heights[line - 1] - t.size) / 4);
+                    ctx.fillText(t.content, x, y - (heights[line - 1] - t.size) / 4);
+                    x += t.width;
+                } else if(t == "\n") {
+                    x = 0;
+                    y += heights[line++] || 0;
+                }
+            }      
+            inner_cvs.location = [0, 0, 1];
+            inner_x = inner_y = 0;
+            inner_cvs.image.complete = 1;            
         };
+        this.setText(this.text);
     };
     window.Sprite = Sprite;
 }());

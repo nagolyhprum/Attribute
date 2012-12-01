@@ -1,0 +1,438 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Attribute - Test</title>
+    	<script type="text/javascript" src="C2D.js"></script>
+		<script type="text/javascript" src="Sprite.js"></script>
+		<script type="text/javascript" src="Utility.js"></script>
+    	<script type="text/javascript" src="Robot.js"></script>
+        <script type="text/javascript" src="Script.js"></script>
+        <script type="text/javascript" src="AddOns.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+        <script src="test/qunit.js" type="text/javascript"></script>
+        <link href="test/qunit.css" rel="stylesheet" type="text/css"/>
+    </head>
+    <body>
+        <canvas id="stage" style="background:black;"></canvas>
+        <div id="qunit"></div>
+        <script type="text/javascript">
+            var waitTime = 1000/60;
+            test("Create a parameterless sprite", function() {
+                ok(new Sprite(), "Sprite created!");
+            });
+            test("Create a sprite with an empty object", function() {
+                ok(new Sprite({}), "Sprite created!");
+            });
+            test("Create a sprite with an empty object and a callback", function() {
+                new Sprite({}, function() {
+                    ok(this, "Sprite created!");                    
+                });
+            });
+            test("Create a sprite using strings", 2, function() {
+                Sprite.FUNCTIONS = {
+                    constructors : {
+                        model : function() {
+                           ok(this.id === "test", "Sprite created!");
+                        }
+                    }
+                };
+                Sprite.FUNCTIONS["constructors.model"] = Sprite.FUNCTIONS.constructors.model;
+                Sprite.MODELS = {
+                    model : {
+                        id : "test"
+                    }                    
+                };
+                var s = new Sprite("model", "constructors.model");
+                s.add("model-model");
+                Sprite.FUNCTIONS = {};
+                Sprite.MODELS = {};
+            });
+            test("Make sure a sprite hears its onadd function", function() {
+                var s = new Sprite({
+                    onadd : function(p) {
+                        ok(p === this, "Sprite added!");
+                    }
+                });
+                s.add(s);
+            });
+            test("Create a canvas", function(){
+                new C2D("stage", function(c2d) {
+                    ok(c2d, "Canvas created");
+                });
+            });
+            test("Make sure a sprite hears it mouse events", 9, function() {
+                stop();
+                var s = new Sprite({
+                    width : 10,
+                    height : 10,
+                    id : "stage",
+                    onmousedown : function() {
+                        ok(order.pop() === "down", "Mouse down heard");
+                    },
+                    onmouseup : function() {
+                        ok(order.pop() === "up", "Mouse up heard");                        
+                    },
+                    onmouseclick : function() {
+                        ok(order.pop() === "click", "Mouse click heard");                        
+                    },
+                    onmousein : function() {
+                        ok(order.pop() === "in", "Mouse in heard");                        
+                    },
+                    onmouseout : function() {
+                        ok(order.pop() === "out", "Mouse out heard");                        
+                    },
+                    onmousedrag : function() {
+                        ok(order.pop() === "drag", "Mouse drag heard");                        
+                    },
+                    onmousemove : [
+                        function() {
+                            ok(order.pop() === "move", "Mouse move heard");                        
+                        },
+                        function() {
+                            ok(order.pop() === "move", "Mouse 2 move heard");                        
+                        }
+                    ]
+                }), order = ["in", "move", "move", "down", "drag", "up", "click", "out"].reverse();
+                new C2D("stage", function(c2d) {
+                    c2d.setStage("stage", s)
+                        .start()
+                        .getRobot()
+                        .mouseToSprite("move", {id:"stage"}) //invokes move, in
+                        .wait(waitTime)
+                        .mouseToSprite("down", {id:"stage"}) //invokes down
+                        .wait(waitTime)
+                        .mouseToSprite("move", {id:"stage"}, [1, 1]) //invokes drag
+                        .wait(waitTime)
+                        .mouseToSprite("up", {id:"stage"}) //invokes up, click
+                        .wait(waitTime)
+                        .mouseToSprite("move", {id:"stage"}, [10, 10]) //invokes out
+                        .wait(waitTime)
+                        .invoke(function(callback) {
+                            ok(callback, "Ran the bot!");
+                            c2d.stop();
+                            start();
+                        })
+                        .start();
+                });
+            });
+            test("Button functions properly", 2, function() {
+                stop();
+                var model = {
+                    component : "button",
+                    width : 50,
+                    height : 50,
+                    hover : {
+                        stroke : "orange",
+                        fill : "brown"                        
+                    },
+                    active : {
+                        stroke : "red",
+                        fill : "yellow"                        
+                    },
+                    text : {
+                        color : "black",
+                        content : "Hello World"
+                    },
+                    fill : "white",
+                    stroke : "black",
+                    onmouseclick : function(l) {
+                        ok(l, "Button click was heard!")
+                    }
+                }, button = new Sprite(model), allgood = 1;
+                new C2D("stage", function(c2d) {
+                    c2d.setStage("stage", button)
+                        .start()
+                        .getRobot()
+                        
+                        .mouseToSprite("move", {component:"button"})
+                        .wait(waitTime)
+                        .invoke(function(callback) {
+                            allgood = allgood 
+                                && (button.fill === model.hover.fill) 
+                                && (button.stroke = model.hover.stroke);
+                            callback();
+                        })
+                        
+                        .mouseToSprite("down", {component:"button"})
+                        .wait(waitTime)
+                        .invoke(function(callback) {                            
+                            allgood = allgood
+                                && (button.fill === model.active.fill) 
+                                && (button.stroke = model.active.stroke);
+                            callback();
+                        })
+                        
+                        .mouseToSprite("move", {component:"button"}, [50, 50])
+                        .wait(waitTime)
+                        .invoke(function(callback) {                            
+                            allgood = allgood
+                                && (button.fill === model.fill) 
+                                && (button.stroke = model.stroke);
+                            callback();
+                        })
+                        
+                        .mouseToSprite("move", {component:"button"})
+                        .wait(waitTime)
+                        .invoke(function(callback) {                       
+                            allgood = allgood
+                                && (button.fill === model.active.fill) 
+                                && (button.stroke = model.active.stroke);
+                            callback();
+                        })
+                        
+                        .mouseToSprite("up", {component:"button"})
+                        .wait(waitTime)
+                        .invoke(function(callback) {                       
+                            allgood = allgood
+                                && (button.fill === model.hover.fill) 
+                                && (button.stroke = model.hover.stroke);
+                            callback();
+                        })
+                        
+                        .invoke(function() {
+                            ok(allgood, "Button works!");
+                            c2d.stop();
+                            start();
+                        })
+                        .start();
+                    
+                });
+            });
+            test("Slider functions properly", 4, function() {
+                stop();
+                var model = {
+                    component : "slider",
+                    width : 200,
+                    height : 20,
+                    min : 0,
+                    max : 100,
+                    step : Math.round,
+                    onchange : function(v, lv) {
+                        ok(v === values.shift(), "Value change heard!");
+                    }
+                }, slider = new Sprite(model), allgood = 1, values = [100, 50, 0];           
+                function bar(t) {
+                    return t.parent && t.parent.component === "slider";
+                }
+                new C2D("stage", function(c2d) {
+                    c2d.setStage("stage", slider)
+                        .start()
+                        .getRobot()
+                        .mouseToSprite("move", bar)
+                        .wait(waitTime)
+                        .mouseToSprite("down", bar)
+                        .wait(waitTime)
+                        .mouseToSprite("move", bar, [100, 0])
+                        .wait(waitTime)
+                        .mouseToSprite("move", bar)
+                        .wait(waitTime)
+                        .mouseToSprite("move", bar, [-100, 0])
+                        .wait(waitTime)
+                        .mouseToSprite("up", bar)
+                        .wait(waitTime)
+                        .invoke(function() {
+                            c2d.stop();
+                            ok(allgood, "Slider works!");
+                            start();                            
+                        })
+                        .start();
+                });
+            });
+            test("Textbox functions properly", function() {
+                stop();
+                var textbox = new Sprite({
+                    component : "textbox",
+                    width : 200,
+                    height : 200,
+                    text : [
+                        {
+                            content : "This is a test",
+                            size : 36
+                        },
+                        {
+                            size : 8,
+                            color : "blue",
+                            content : " this is going to be very very small text! "
+                        },
+                        {
+                            content : "with fonts",
+                            color : "red",
+                            family : "Times New Roman, Sans Serif",
+                            weight : "bold",
+                            style : "italic",
+                            size : 36
+                        },
+                        {
+                            content : " and other similar things :) ",
+                            color : "green",
+                            family : "Times New Roman, Sans Serif",
+                            weight : "bold",
+                            style : "italic",
+                            size : 24
+                        },
+                        {
+                            content : "BIG",
+                            color : "yellow",
+                            size : 72
+                        }
+                    ]
+                });
+                new C2D("stage", function(c2d) {
+                    c2d.setStage("stage", textbox)
+                        .start()
+                        .getRobot()
+                        .mouseToSprite("move", {component : "textbox"})
+                        .wait(waitTime)
+                        .mouseToSprite("down", {component : "textbox"})
+                        .wait(waitTime)
+                        .mouseToSprite("move", {component : "textbox"}, [-100, -100])
+                        .wait(waitTime)
+                        .mouseToSprite("up", {component : "textbox"})
+                        .wait(waitTime)
+                        .invoke(function(callback) {
+                            textbox.height = textbox.width = 100;
+                            textbox.setText();
+                            callback();
+                        })
+                        .mouseToSprite("move", {component : "textbox"})
+                        .wait(waitTime)
+                        .mouseToSprite("down", {component : "textbox"})
+                        .wait(waitTime)
+                        .mouseToSprite("move", {component : "textbox"}, [-50, -50])
+                        .wait(waitTime)
+                        .mouseToSprite("up", {component : "textbox"})
+                        .wait(waitTime)
+                        .invoke(function(callback) {
+                            c2d.stop();
+                            ok(callback, "Textbox works!");
+                            start();
+                        })
+                        .start();
+                });
+            });
+            test("Dragging functions properly", 3, function() {
+                stop();
+                var droppable = new Sprite({
+                    type : "droppable",
+                    fill : "white",
+                    width : 40,
+                    height : 40,
+                    location : [50, 50],
+                    ontake : {
+                        draggable : function(draggable) {
+                            ok(draggable, "Heard take");
+                        }
+                    }
+                }), draggable = new Sprite({
+                    draggable : 1,
+                    type : "draggable",
+                    fill : "yellow",
+                    width : 40,
+                    height : 40,
+                    location : [200, 200],
+                    ondrop : {
+                        droppable : function(droppable) {
+                            ok(droppable, "Heard drop!");
+                            this.stick();
+                        }
+                    }
+                }), stage = new Sprite({
+                    width : 640,
+                    height : 480
+                });
+                stage.add(draggable);
+                stage.add(droppable);
+                new C2D("stage", function(c2d) {
+                    c2d.setStage("stage", stage)
+                        .start()
+                        .getRobot()
+                        .mouseToSprite("move", {type:"draggable"})
+                        .wait(waitTime)
+                        .mouseToSprite("down", {type:"draggable"})
+                        .wait(waitTime)
+                        .mouseToSprite("move", {type:"droppable"})
+                        .wait(waitTime)                        
+                        .mouseToSprite("up", {type:"droppable"})
+                        .wait(waitTime)                   
+                        .mouseToSprite("move", {type:"draggable"})
+                        .wait(waitTime)     
+                        .mouseToSprite("down", {type:"draggable"})
+                        .wait(waitTime)
+                        .invoke(function(callback) {
+                            c2d.stop();
+                            ok(callback, "dragging, dropping, and taking works")
+                            start();
+                        })
+                        .start();
+                });
+            });
+            test("Swapping functions properly", 3, function() {
+                stop();
+                var draggable = {
+                    draggable : 1,
+                    width : 64,
+                    height : 64,
+                    type : "draggable",
+                    ondrop : {
+                        droppable : function(droppable) {  
+                            this.location = droppable.location.slice(0);
+                            this.stick();                       
+                        }
+                    },
+                    onswap : {
+                        draggable : function(draggable) {
+                            ok(draggable, "Draggables were switched!");
+                        }
+                    }
+                }, droppable = {
+                    limit : 1,
+                    width : 64,
+                    height : 64,
+                    type : "droppable",
+                    swaps : 1
+                }, 
+                a = new Sprite(draggable, function() {
+                    this.fill = "yellow";
+                    this.location = [50, 50, 1];
+                }),
+                b = new Sprite(draggable, function() {
+                    this.fill = "red";
+                    this.location = [150, 50, 1];
+                }),
+                c = new Sprite(droppable, function() {
+                    this.fill = "green";
+                    this.location = [50, 150, 1];
+                }),
+                d = new Sprite(droppable, function() {
+                    this.fill = "blue";
+                    this.location = [150, 150, 1];
+                }), stage = new Sprite({
+                    width : 640,
+                    height : 480
+                });
+                a.drop(c);
+                b.drop(d);
+                stage.add(c).add(d).add(a).add(b);
+                new C2D("stage", function(c2d) {
+                    c2d.setStage("stage", stage)
+                        .start()
+                        .getRobot()
+                        .mouseToSprite("move", a)
+                        .wait(waitTime)
+                        .mouseToSprite("down", a)
+                        .wait(waitTime)
+                        .mouseToSprite("move", d)
+                        .wait(waitTime)
+                        .mouseToSprite("up", d)
+                        .wait(waitTime)
+                        .invoke(function(callback) {
+                            c2d.stop();
+                            ok(callback, "Robot completed!");
+                            start();
+                        })
+                        .start();
+                });
+            });
+        </script>
+    </body>
+</html>
